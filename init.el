@@ -688,6 +688,7 @@ before packages are loaded."
     (add-to-list 'org-structure-template-alist '("r" . "src R"))
     (add-to-list 'org-structure-template-alist '("clj" . "src clojure"))
     (add-to-list 'org-structure-template-alist '("sql" . "src sql"))
+
     ;; Moved org :variables here
     (require 'cider)
     (add-to-list 'org-babel-tangle-lang-exts '("clojure" . "clj"))
@@ -695,8 +696,27 @@ before packages are loaded."
           org-enable-reveal-js-support t
           org-insert-heading-respect-content t
           org-startup-indented t
-          org-directory "~/org"
-          org-agenda-files '("~/org/main.org")
+          org-directory (file-truename (expand-file-name "/mnt/c/users/aaron/OneDrive/org/"))
+          org-agenda-files (list (expand-file-name "main.org" org-directory))
+          org-default-notes-file (expand-file-name "main.org" org-directory)
+          org-capture-templates
+          `(("t" "Todo" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Backlog")
+             "* TODO %?\nSCHEDULED: %t" :prepend t)
+            ("n" "Next action" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Backlog")
+             "* NEXT %?\nSCHEDULED: %t" :prepend t)
+            ("w" "Waiting" entry (file+headline ,(expand-file-name "main.org" org-directory) "Tasks" "Backlog")
+             "* WAIT %?\nSCHEDULED: %t" :prepend t)
+            ("m" "Meeting" entry (file+olp ,(expand-file-name "main.org" org-directory) "Meetings")
+             "* %? %u\n%t\n** Notes\n** Action items" :clock-in t :clock-resume t)
+            ("M" "Meeting (plan)" entry (file+headline ,(expand-file-name "main.org" org-directory) "Meetings")
+             "* %? \nSCHEDULED: %^T\nOBJECTIVE: \n** Agenda\n** Notes\n** Action items")
+            ("e" "Email or message" entry (file+headline ,(expand-file-name "main.org" org-directory) "Messages")
+             "* %?\nSCHEDULED: %t\n[[file:%(expand-file-name (format \"messages/%s.msg\" (format-time-string \"%Y%m%d-%H%M%S\")) org-directory)]]"
+             :prepend t)
+            ("p" "Paste clipboard" entry (file+headline ,(expand-file-name "main.org" org-directory) "UNFILED")
+             "* %?\n\n%x")
+            ("i" "Idea" entry (file+headline ,(expand-file-name "main.org" org-directory) "Ideas")
+             "* %? \n%t"))
           org-agenda-skip-deadline-if-done t
           org-agenda-skip-scheduled-if-done t
           org-want-todo-bindings t
@@ -709,35 +729,19 @@ before packages are loaded."
           nrepl-sync-request-timeout nil
           org-confirm-babel-evaluate nil
           org-file-apps '((auto-mode . emacs)
-                          ("\\.png\\'" . "msedge %s")
-                          ("\\.jpg\\'" . "msedge %s")
-                          ("\\.gif\\'" . "msedge %s")
-                          ("\\.pdf\\'" . (lambda (file link) (start-process "acrobat" nil "C:/Program Files/Adobe/Acrobat DC/Acrobat/Acrobat.exe" (convert-standard-filename file))))
-                          ("\\.html\\'" . "msedge %s")
-                          ("\\.xlsx\\'" . "EXCEL %s")
-                          ("\\.docx\\'" . "WINWORD %s"))
-          org-default-notes-file "~/org/main.org"
-          org-capture-templates
-          '(("t" "Todo" entry (file+headline "~/org/main.org" "Tasks")
-             "* TODO %?\nSCHEDULED: %t " :prepend t)
-            ("n" "Next action" entry (file+headline "~/org/main.org" "Tasks")
-             "* NEXT %?\nSCHEDULED: %t " :prepend t)
-            ("f" "Follow-up" entry (file+headline "~/org/main.org" "Tasks")
-             "* FOLL %?\nSCHEDULED: %t " :prepend t)
-            ("m" "Meeting" entry (file+headline "~/org/main.org" "Meetings")
-             "* %? %u\n%t\n** Notes\n** Action items" :clock-in t :clock-resume t)
-            ("M" "Meeting (plan)" entry (file+headline "~/org/main.org" "Meetings")
-             "* %? \nSCHEDULED: %^T\nOBJECTIVE: \n** Agenda\n** Notes\n** Action items")
-            ("e" "Email or message" entry (file+headline "~/org/main.org" "Messages")
-             "* %?\nSCHEDULED: %t\n [[~/org/messages/NAME.msg]]" :prepend t)
-            ("p" "Paste clipboard" entry (file+headline "~/org/main.org" "UNFILED")
-             "* %?\n\n%x")
-            ("i" "Idea" entry (file+headline "~/org/main.org" "Ideas")
-             "* %? \n%t"))
+                          ;; ("\\.png\\'" . "msedge %s")
+                          ;; ("\\.jpg\\'" . "msedge %s")
+                          ;; ("\\.gif\\'" . "msedge %s")
+                          ;; ("\\.pdf\\'" . (lambda (file link) (start-process "acrobat" nil "C:/Program Files/Adobe/Acrobat DC/Acrobat/Acrobat.exe" (convert-standard-filename file))))
+                          ;; ("\\.html\\'" . "msedge %s")
+                          ;; ("\\.xlsx\\'" . "EXCEL %s")
+                          ;; ("\\.docx\\'" . "WINWORD %s")
+                          )
           org-insert-heading-respect-content t
           org-refile-targets (quote ((nil :maxlevel . 9) (org-agenda-files :maxlevel . 9)))
           org-startup-with-inline-images t
-          org-agenda-custom-commands '())
+          org-agenda-custom-commands '()
+          )
     ;; Make sure org-reveal is loaded
     (require 'ox-reveal)
     (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
