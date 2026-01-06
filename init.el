@@ -95,7 +95,7 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '(emmet-mode ox-reveal vega-view)
+   dotspacemacs-additional-packages '(emmet-mode ox-reveal vega-view org-superstar)
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -662,8 +662,7 @@ before packages are loaded."
     (add-hook 'cider-repl-mode-hook
               (lambda ()
                 (local-set-key (kbd "RET") 'cider-repl-newline-and-indent)
-                (local-set-key (kbd "C-RET") 'cider-repl-return)))
-    )
+                (local-set-key (kbd "C-RET") 'cider-repl-return))))
   ;; Access Python virtual environment keybindings from org-mode
   (add-to-list 'spacemacs--python-pipenv-modes 'org-mode)
   ;; Don't autopopulate numbers
@@ -679,6 +678,23 @@ before packages are loaded."
 
   ;; === Org-mode ===
   (with-eval-after-load 'org
+
+    ;; Replace list item markers like "-" with a bullet, and optionally prettify headlines.
+    (use-package org-superstar
+      :ensure t
+      :after org
+      :hook (org-mode . org-superstar-mode)
+      :config
+      ;; List bullets: treat -, +, * as the same nice bullet.
+      (setq org-superstar-item-bullet-alist '((?- . ?•) (?+ . ?•) (?* . ?•)))
+
+      ;; Keep indentation behavior sane (Spacemacs often enables org-indent)
+      (setq org-superstar-remove-leading-stars t)
+
+      ;; If you want headline stars to stay as stars (no fancy glyphs), keep these nil:
+      ;; (setq org-superstar-headline-bullets-list nil)
+      )
+
     ;; Choose fonts with fallback logic (portable across machines)
     (let* ((body-tuple
             (cond ((x-list-fonts "Crimson")         '(:font "Crimson"))
@@ -687,11 +703,11 @@ before packages are loaded."
                   ((x-family-fonts "Serif")         '(:family "Serif"))
                   (t (warn "Org body: no serif font found; using default.") nil)))
            (header-tuple
-            (cond ((x-list-fonts "Fira Sans")          '(:font "Fira Sans"))
+            (cond ((x-list-fonts "Fira Sans")            '(:font "Fira Sans"))
                   ((x-list-fonts "Fira Sans Condensed") '(:font "Fira Sans Condensed"))
-                  ((x-list-fonts "Ubuntu Sans")        '(:font "Ubuntu Sans"))
-                  ((x-list-fonts "DejaVu Sans")        '(:font "DejaVu Sans"))
-                  ((x-family-fonts "Sans Serif")       '(:family "Sans Serif"))
+                  ((x-list-fonts "Ubuntu Sans")         '(:font "Ubuntu Sans"))
+                  ((x-list-fonts "DejaVu Sans")         '(:font "DejaVu Sans"))
+                  ((x-family-fonts "Sans Serif")        '(:family "Sans Serif"))
                   (t (warn "Org headers: no sans font found; using default.") nil)))
            (mono-tuple
             (cond ((x-list-fonts "Fira Code")        '(:font "Fira Code"))
@@ -702,12 +718,11 @@ before packages are loaded."
                   (t (warn "Org mono: no monospace font found; using default.") nil)))
 
            ;; Sizes: these are the two knobs you’ll tweak most.
-           (vp-height 180)   ;; body prose (Crimson) — you said ~30% too small; 180 is a good baseline
-           (fp-height 150)   ;; code/tables (Fira Code) — keep a bit smaller than prose usually
+           (vp-height 240)   ;; body prose (Crimson)
+           (fp-height 200)   ;; code/tables (Fira Code)
            (headline `(:weight semibold)))
 
-      ;; 1) variable-pitch / fixed-pitch base faces
-      ;; variable-pitch-mode uses these.
+      ;; variable-pitch / fixed-pitch base faces
       (when body-tuple
         (apply #'set-face-attribute 'variable-pitch nil
                :height vp-height
@@ -722,10 +737,10 @@ before packages are loaded."
                    (list :family (plist-get mono-tuple :font))
                  (list :family (plist-get mono-tuple :family)))))
 
-      ;; 2) Enable variable pitch automatically in Org buffers
+      ;; Enable variable pitch automatically in Org buffers
       (add-hook 'org-mode-hook #'variable-pitch-mode)
 
-      ;; 3) Org faces: headers use header font; body uses variable-pitch; code uses fixed-pitch
+      ;; Org faces
       (custom-theme-set-faces
        'user
 
@@ -759,13 +774,14 @@ before packages are loaded."
 
        ;; Line numbers: keep monospace even with variable-pitch-mode
        `(line-number ((t (:inherit fixed-pitch))))
-       `(line-number-current-line ((t (:inherit fixed-pitch)))))
-      )
+       `(line-number-current-line ((t (:inherit fixed-pitch))))
+       `(linum ((t (:inherit fixed-pitch))))))
 
     ;; tangle-on-save
     (add-hook 'org-mode-hook
               (lambda () (add-hook 'after-save-hook #'org-babel-tangle
                                    :append :local)))
+
     ;; code snippets
     (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
     (add-to-list 'org-structure-template-alist '("r" . "src R"))
@@ -808,8 +824,7 @@ before packages are loaded."
           org-startup-truncated nil
           org-startup-folded 'content
           org-ellipsis "▼"
-          org-babel-load-languages '(
-                                     (emacs-lisp . t)
+          org-babel-load-languages '((emacs-lisp . t)
                                      (R . t)
                                      (python . t)
                                      (clojure . t)
@@ -817,20 +832,12 @@ before packages are loaded."
           org-babel-clojure-backend 'cider
           nrepl-sync-request-timeout nil
           org-confirm-babel-evaluate nil
-          org-file-apps '((auto-mode . emacs)
-                          ;; ("\\.png\\'" . "msedge %s")
-                          ;; ("\\.jpg\\'" . "msedge %s")
-                          ;; ("\\.gif\\'" . "msedge %s")
-                          ;; ("\\.pdf\\'" . (lambda (file link) (start-process "acrobat" nil "C:/Program Files/Adobe/Acrobat DC/Acrobat/Acrobat.exe" (convert-standard-filename file))))
-                          ;; ("\\.html\\'" . "msedge %s")
-                          ;; ("\\.xlsx\\'" . "EXCEL %s")
-                          ;; ("\\.docx\\'" . "WINWORD %s")
-                          )
+          org-file-apps '((auto-mode . emacs))
           org-insert-heading-respect-content t
           org-refile-targets (quote ((nil :maxlevel . 9) (org-agenda-files :maxlevel . 9)))
           org-startup-with-inline-images t
-          org-agenda-custom-commands '()
-          )
+          org-agenda-custom-commands '())
+
     ;; Make sure org-reveal is loaded
     (require 'ox-reveal)
     (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
@@ -853,10 +860,12 @@ before packages are loaded."
                           (org-agenda-skip-entry-if 'notdeadline)))
                     (org-agenda-sorting-strategy '(deadline-up))
                     (org-agenda-view-columns-initially t))))
+
     ;; Adding duckdb to org-babel
     (add-to-list 'org-babel-load-languages '(duckdb . t))
     (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
     (add-to-list 'org-src-lang-modes '("duckdb" . sql)))
+
   ;; === Clojure ===
   (with-eval-after-load 'cider
     ;; Just the project name in REPL buffer like *clj:my-project*
