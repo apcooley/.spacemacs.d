@@ -1,8 +1,19 @@
 #+TITLE: Aaron Cooley's Spacemacs User Config
 
+* About
+Maintaining a Spacemacs config is difficult. I've added an org layer to the process to make it clearer and easier to maintain.
+
+* Setup
+A full Spacemacs setup requires more than just the Emacs packages, it requires an ecosystem of other tools. Here is the installation process to get this working from scratch on various OSes.
+
+** Windows
+
+** Linux
+
+* User config
 Spacemacs user config in literate programming form. This drops right into the =dotspacemacs/user-config= section of =init.el=.
 
-Remove =:tangle yes= from a header if you don't want it to be added. This allows you to easily turn on/off various settings, experiment safely, etc.
+Remove =:tangle yes= from a header if you don't want it to be added. This allows you to easily turn on/off various settings, experiment safely, etc. The default behavior in this setup is to tangle every time the file is saved.
 
 #+begin_src emacs-lisp :tangle yes
   ;; faster project indexing
@@ -104,6 +115,9 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
 #+begin_src emacs-lisp :tangle yes
   ;; === Org-mode ===
   (with-eval-after-load 'org
+
+    ;; Start in visual-line-mode
+    (add-hook 'org-mode-hook #'visual-line-mode)
 
     ;; Replace list item markers like "-" with a bullet, and optionally prettify headlines.
     (use-package org-superstar
@@ -215,6 +229,9 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
     (add-to-list 'org-structure-template-alist '("r" . "src R"))
     (add-to-list 'org-structure-template-alist '("clj" . "src clojure"))
     (add-to-list 'org-structure-template-alist '("sql" . "src sql"))
+
+    ;; Force org ellipsis glyph to render with fixed-pitch (symbol coverage)
+    (set-face-attribute 'org-ellipsis nil :inherit 'fixed-pitch)
 
     ;; Moved org :variables here
     (require 'cider)

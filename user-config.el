@@ -76,6 +76,9 @@
 ;; === Org-mode ===
 (with-eval-after-load 'org
 
+  ;; Start in visual-line-mode
+  (add-hook 'org-mode-hook #'visual-line-mode)
+
   ;; Replace list item markers like "-" with a bullet, and optionally prettify headlines.
   (use-package org-superstar
     :ensure t
@@ -186,6 +189,9 @@
   (add-to-list 'org-structure-template-alist '("r" . "src R"))
   (add-to-list 'org-structure-template-alist '("clj" . "src clojure"))
   (add-to-list 'org-structure-template-alist '("sql" . "src sql"))
+
+  ;; Force org ellipsis glyph to render with fixed-pitch (symbol coverage)
+  (set-face-attribute 'org-ellipsis nil :inherit 'fixed-pitch)
 
   ;; Moved org :variables here
   (require 'cider)
