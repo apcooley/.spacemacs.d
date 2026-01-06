@@ -679,6 +679,89 @@ before packages are loaded."
 
   ;; === Org-mode ===
   (with-eval-after-load 'org
+    ;; Choose fonts with fallback logic (portable across machines)
+    (let* ((body-tuple
+            (cond ((x-list-fonts "Crimson")         '(:font "Crimson"))
+                  ((x-list-fonts "Crimson Text")    '(:font "Crimson Text"))
+                  ((x-list-fonts "DejaVu Serif")    '(:font "DejaVu Serif"))
+                  ((x-family-fonts "Serif")         '(:family "Serif"))
+                  (t (warn "Org body: no serif font found; using default.") nil)))
+           (header-tuple
+            (cond ((x-list-fonts "Fira Sans")          '(:font "Fira Sans"))
+                  ((x-list-fonts "Fira Sans Condensed") '(:font "Fira Sans Condensed"))
+                  ((x-list-fonts "Ubuntu Sans")        '(:font "Ubuntu Sans"))
+                  ((x-list-fonts "DejaVu Sans")        '(:font "DejaVu Sans"))
+                  ((x-family-fonts "Sans Serif")       '(:family "Sans Serif"))
+                  (t (warn "Org headers: no sans font found; using default.") nil)))
+           (mono-tuple
+            (cond ((x-list-fonts "Fira Code")        '(:font "Fira Code"))
+                  ((x-list-fonts "Fira Mono")        '(:font "Fira Mono"))
+                  ((x-list-fonts "DejaVu Sans Mono") '(:font "DejaVu Sans Mono"))
+                  ((x-list-fonts "Ubuntu Mono")      '(:font "Ubuntu Mono"))
+                  ((x-family-fonts "Monospace")      '(:family "Monospace"))
+                  (t (warn "Org mono: no monospace font found; using default.") nil)))
+
+           ;; Sizes: these are the two knobs you’ll tweak most.
+           (vp-height 180)   ;; body prose (Crimson) — you said ~30% too small; 180 is a good baseline
+           (fp-height 150)   ;; code/tables (Fira Code) — keep a bit smaller than prose usually
+           (headline `(:weight semibold)))
+
+      ;; 1) variable-pitch / fixed-pitch base faces
+      ;; variable-pitch-mode uses these.
+      (when body-tuple
+        (apply #'set-face-attribute 'variable-pitch nil
+               :height vp-height
+               (if (plist-get body-tuple :font)
+                   (list :family (plist-get body-tuple :font))
+                 (list :family (plist-get body-tuple :family)))))
+
+      (when mono-tuple
+        (apply #'set-face-attribute 'fixed-pitch nil
+               :height fp-height
+               (if (plist-get mono-tuple :font)
+                   (list :family (plist-get mono-tuple :font))
+                 (list :family (plist-get mono-tuple :family)))))
+
+      ;; 2) Enable variable pitch automatically in Org buffers
+      (add-hook 'org-mode-hook #'variable-pitch-mode)
+
+      ;; 3) Org faces: headers use header font; body uses variable-pitch; code uses fixed-pitch
+      (custom-theme-set-faces
+       'user
+
+       ;; Body (prose)
+       `(org-default ((t (:inherit variable-pitch))))
+       `(org-document-info ((t (:inherit variable-pitch))))
+       `(org-document-info-keyword ((t (:inherit fixed-pitch))))
+
+       ;; Title
+       `(org-document-title ((t (,@headline ,@header-tuple :height 1.15 :underline nil :weight bold))))
+
+       ;; Headings
+       `(org-level-8 ((t (,@headline ,@header-tuple :height 1.00))))
+       `(org-level-7 ((t (,@headline ,@header-tuple :height 1.00))))
+       `(org-level-6 ((t (,@headline ,@header-tuple :height 1.00))))
+       `(org-level-5 ((t (,@headline ,@header-tuple :height 1.05))))
+       `(org-level-4 ((t (,@headline ,@header-tuple :height 1.10))))
+       `(org-level-3 ((t (,@headline ,@header-tuple :height 1.18))))
+       `(org-level-2 ((t (,@headline ,@header-tuple :height 1.25))))
+       `(org-level-1 ((t (,@headline ,@header-tuple :height 1.35))))
+
+       ;; Monospace elements
+       `(org-block ((t (:inherit fixed-pitch))))
+       `(org-code ((t (:inherit fixed-pitch))))
+       `(org-verbatim ((t (:inherit fixed-pitch))))
+       `(org-table ((t (:inherit fixed-pitch))))
+       `(org-meta-line ((t (:inherit fixed-pitch))))
+       `(org-checkbox ((t (:inherit fixed-pitch))))
+       `(org-special-keyword ((t (:inherit fixed-pitch))))
+       `(org-tag ((t (:inherit fixed-pitch))))
+
+       ;; Line numbers: keep monospace even with variable-pitch-mode
+       `(line-number ((t (:inherit fixed-pitch))))
+       `(line-number-current-line ((t (:inherit fixed-pitch)))))
+      )
+
     ;; tangle-on-save
     (add-hook 'org-mode-hook
               (lambda () (add-hook 'after-save-hook #'org-babel-tangle
@@ -723,8 +806,14 @@ before packages are loaded."
           org-hide-emphasis-markers t
           org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "WAIT(w)" "|" "DONE(d)" "CANC(c)"))
           org-startup-truncated nil
+          org-startup-folded 'content
           org-ellipsis "▼"
-          org-babel-load-languages '((emacs-lisp . t) (R . t) (python . t) (clojure . t) (sql . t))
+          org-babel-load-languages '(
+                                     (emacs-lisp . t)
+                                     (R . t)
+                                     (python . t)
+                                     (clojure . t)
+                                     (sql . t))
           org-babel-clojure-backend 'cider
           nrepl-sync-request-timeout nil
           org-confirm-babel-evaluate nil
