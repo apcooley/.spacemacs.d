@@ -41,7 +41,8 @@
 ;; Custom keybindings
 (spacemacs/set-leader-keys
   "f R" 'recover-this-file
-  "f n" 'spacemacs/rename-current-buffer-file)
+  "f n" 'spacemacs/rename-current-buffer-file
+  )
 (spacemacs-bootstrap/init-which-key)
 (which-key-add-key-based-replacements
   "SPC f n" "Rename")
@@ -49,6 +50,8 @@
   "SPC f R" "Recover")
 (spacemacs/set-leader-keys-for-major-mode 'clojure-mode
   "s s" 'cider-switch-to-repl-buffer)
+(spacemacs/set-leader-keys-for-major-mode 'org-mode
+  "g" 'org-todo)
 (with-eval-after-load 'paredit
   ;; Disable the default RET keybinding in paredit-mode
   (define-key paredit-mode-map (kbd "RET") nil)
@@ -118,8 +121,8 @@
                 (t (warn "Org mono: no monospace font found; using default.") nil)))
 
          ;; Sizes: these are the two knobs you’ll tweak most.
-         (vp-height 240)   ;; body prose (Crimson)
-         (fp-height 200)   ;; code/tables (Fira Code)
+         (vp-height 90)   ;; body prose (Crimson)
+         (fp-height 80)   ;; code/tables (Fira Code)
          (headline `(:weight semibold)))
 
     ;; variable-pitch / fixed-pitch base faces
@@ -274,3 +277,14 @@
 (with-eval-after-load 'cider
   ;; Just the project name in REPL buffer like *clj:my-project*
   (setq cider-session-name-template "clj:%p"))
+
+(gptel-make-anthropic "Claude"
+  :stream t
+  :key (getenv "ANTHROPIC-API-KEY"))
+
+(gptel-make-gemini "Gemini"
+  :stream t
+  :key (getenv "GEMINI-API-KEY"))
+
+(with-eval-after-load 'ob-python
+  (setq org-babel-python-command "python3"))

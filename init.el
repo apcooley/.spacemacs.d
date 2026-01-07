@@ -59,7 +59,8 @@ This function should only modify configuration layer settings."
      (javascript :variables js-indent-level 1)
      (llm-client :variables
                  llm-client-enable-gptel t
-                 gptel-api-key (lambda () (getenv "OPENAI_API_KEY")))
+                 gptel-api-key (lambda () (getenv "OPENAI_API_KEY"))
+                 gptel-model 'gpt-5.1)
      lsp
      lua
      markdown
@@ -270,7 +271,7 @@ It should only modify the values of Spacemacs settings."
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
    dotspacemacs-default-font '("Fira Code"
-                               :size 20.0
+                               :size 10.0
                                :weight normal
                                :width normal)
 

@@ -10,6 +10,25 @@ A full Spacemacs setup requires more than just the Emacs packages, it requires a
 
 ** Linux
 
+*** Install Java
+#+begin_src bash
+  sudo apt update
+  sudo apt install default-jdk
+#+end_src
+
+*** Install Clojure
+#+begin_src bash
+  curl -L -O https://github.com/clojure/brew-install/releases/latest/download/linux-install.sh
+  chmod +x linux-install.sh
+  sudo ./linux-install.sh
+#+end_src
+
+*** Install Python
+**** Install uv
+#+begin_src bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+#+end_src
+
 * User config
 Spacemacs user config in literate programming form. This drops right into the =dotspacemacs/user-config= section of =init.el=.
 
@@ -70,25 +89,28 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
-  ;; Custom keybindings
-  (spacemacs/set-leader-keys
-    "f R" 'recover-this-file
-    "f n" 'spacemacs/rename-current-buffer-file)
-  (spacemacs-bootstrap/init-which-key)
-  (which-key-add-key-based-replacements
-    "SPC f n" "Rename")
-  (which-key-add-key-based-replacements
-    "SPC f R" "Recover")
-  (spacemacs/set-leader-keys-for-major-mode 'clojure-mode
-    "s s" 'cider-switch-to-repl-buffer)
-  (with-eval-after-load 'paredit
-    ;; Disable the default RET keybinding in paredit-mode
-    (define-key paredit-mode-map (kbd "RET") nil)
-    ;; Rebind RET in cider-repl-mode to support new lines without sending code
-    (add-hook 'cider-repl-mode-hook
-              (lambda ()
-                (local-set-key (kbd "RET") 'cider-repl-newline-and-indent)
-                (local-set-key (kbd "C-RET") 'cider-repl-return))))
+    ;; Custom keybindings
+    (spacemacs/set-leader-keys
+      "f R" 'recover-this-file
+      "f n" 'spacemacs/rename-current-buffer-file
+      )
+    (spacemacs-bootstrap/init-which-key)
+    (which-key-add-key-based-replacements
+      "SPC f n" "Rename")
+    (which-key-add-key-based-replacements
+      "SPC f R" "Recover")
+    (spacemacs/set-leader-keys-for-major-mode 'clojure-mode
+      "s s" 'cider-switch-to-repl-buffer)
+    (spacemacs/set-leader-keys-for-major-mode 'org-mode
+      "g" 'org-todo)
+    (with-eval-after-load 'paredit
+      ;; Disable the default RET keybinding in paredit-mode
+      (define-key paredit-mode-map (kbd "RET") nil)
+      ;; Rebind RET in cider-repl-mode to support new lines without sending code
+      (add-hook 'cider-repl-mode-hook
+                (lambda ()
+                  (local-set-key (kbd "RET") 'cider-repl-newline-and-indent)
+                  (local-set-key (kbd "C-RET") 'cider-repl-return))))
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
@@ -158,8 +180,8 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
                   (t (warn "Org mono: no monospace font found; using default.") nil)))
 
            ;; Sizes: these are the two knobs you’ll tweak most.
-           (vp-height 240)   ;; body prose (Crimson)
-           (fp-height 200)   ;; code/tables (Fira Code)
+           (vp-height 90)   ;; body prose (Crimson)
+           (fp-height 80)   ;; code/tables (Fira Code)
            (headline `(:weight semibold)))
 
       ;; variable-pitch / fixed-pitch base faces
@@ -317,3 +339,19 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
     ;; Just the project name in REPL buffer like *clj:my-project*
     (setq cider-session-name-template "clj:%p"))
 #+end_src
+
+#+begin_src emacs-lisp :tangle yes
+  (gptel-make-anthropic "Claude"
+    :stream t
+    :key (getenv "ANTHROPIC-API-KEY"))
+
+  (gptel-make-gemini "Gemini"
+    :stream t
+    :key (getenv "GEMINI-API-KEY"))
+#+end_src
+
+#+begin_src emacs-lisp :tangle yes
+  (with-eval-after-load 'ob-python
+    (setq org-babel-python-command "python3"))
+#+end_src
+
