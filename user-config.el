@@ -78,6 +78,14 @@
 (add-hook 'ess-r-mode-hook (lambda () (flycheck-mode -1)))
 
 ;; === Org-mode ===
+(defconst my/org-home
+  (file-truename
+   (or (getenv "ORG_HOME")
+       (error "ORG_HOME is not set in spacemacs.env"))))
+
+(unless (file-directory-p my/org-home)
+  (error "ORG_HOME does not exist: %s" my/org-home))
+
 (with-eval-after-load 'org
 
   ;; save clock history across Emacs sessions
@@ -103,27 +111,27 @@
     ;; (setq org-superstar-headline-bullets-list nil)
     )
 
-  ;; Choose fonts with fallback logic (portable across machines)
+  ;; Choose fonts with fallback logic (PGTK/X11/macOS safe)
+  (defun my/font-available-p (family)
+    (member family (font-family-list)))
+
   (let* ((body-tuple
-          (cond ((x-list-fonts "Crimson")         '(:font "Crimson"))
-                ((x-list-fonts "Crimson Text")    '(:font "Crimson Text"))
-                ((x-list-fonts "DejaVu Serif")    '(:font "DejaVu Serif"))
-                ((x-family-fonts "Serif")         '(:family "Serif"))
-                (t (warn "Org body: no serif font found; using default.") nil)))
+          (cond ((my/font-available-p "Crimson Text") '(:family "Crimson Text"))
+                ((my/font-available-p "Crimson")      '(:family "Crimson"))
+                ((my/font-available-p "DejaVu Serif") '(:family "DejaVu Serif"))
+                ((my/font-available-p "Serif")        '(:family "Serif"))
+                (t (warn "Org body: no serif font found") nil)))
          (header-tuple
-          (cond ((x-list-fonts "Fira Sans")            '(:font "Fira Sans"))
-                ((x-list-fonts "Fira Sans Condensed") '(:font "Fira Sans Condensed"))
-                ((x-list-fonts "Ubuntu Sans")         '(:font "Ubuntu Sans"))
-                ((x-list-fonts "DejaVu Sans")         '(:font "DejaVu Sans"))
-                ((x-family-fonts "Sans Serif")        '(:family "Sans Serif"))
-                (t (warn "Org headers: no sans font found; using default.") nil)))
+          (cond ((my/font-available-p "Ubuntu")      '(:family "Ubuntu"))
+                ((my/font-available-p "DejaVu Sans") '(:family "DejaVu Sans"))
+                ((my/font-available-p "Sans Serif")  '(:family "Sans Serif"))
+                (t (warn "Org headers: no sans font found") nil)))
          (mono-tuple
-          (cond ((x-list-fonts "Fira Code")        '(:font "Fira Code"))
-                ((x-list-fonts "Fira Mono")        '(:font "Fira Mono"))
-                ((x-list-fonts "DejaVu Sans Mono") '(:font "DejaVu Sans Mono"))
-                ((x-list-fonts "Ubuntu Mono")      '(:font "Ubuntu Mono"))
-                ((x-family-fonts "Monospace")      '(:family "Monospace"))
-                (t (warn "Org mono: no monospace font found; using default.") nil)))
+          (cond ((my/font-available-p "Fira Code")        '(:family "Fira Code"))
+                ((my/font-available-p "DejaVu Sans Mono") '(:family "DejaVu Sans Mono"))
+                ((my/font-available-p "Ubuntu Mono")      '(:family "Ubuntu Mono"))
+                ((my/font-available-p "Monospace")        '(:family "Monospace"))
+                (t (warn "Org mono: no monospace font found") nil)))
 
          ;; Sizes: these are the two knobs you’ll tweak most.
          (vp-height 110)   ;; body prose (Crimson)
@@ -208,9 +216,9 @@
         org-enable-reveal-js-support t
         org-insert-heading-respect-content t
         org-startup-indented t
-        org-directory (file-truename (expand-file-name "/mnt/c/users/aaron/OneDrive/org/"))
-        org-agenda-files (list (expand-file-name "main.org" org-directory))
-        org-default-notes-file (expand-file-name "main.org" org-directory)
+        org-directory my/org-home
+        org-agenda-files (list (expand-file-name "main.org" my/org-home))
+        org-default-notes-file (expand-file-name "main.org" my/org-home)
         org-capture-templates
         `(("t" "Todo" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Open")
            "* TODO %?\nSCHEDULED: %t" :prepend t)
