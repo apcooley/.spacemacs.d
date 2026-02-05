@@ -57,6 +57,7 @@ This function should only modify configuration layer settings."
      (ivy :variables
           ivy-enable-advanced-buffer-information t)
      (javascript :variables js-indent-level 1)
+     julia
      (llm-client :variables
                  llm-client-enable-gptel t
                  gptel-api-key (lambda () (getenv "OPENAI_API_KEY"))
@@ -72,6 +73,7 @@ This function should only modify configuration layer settings."
              python-lsp-server 'pyright
              python-formatter 'black
              python-enable-tools '(uv))
+     scala
      (shell :variables
             shell-default-height 30
             shell-default-position 'bottom)
@@ -85,6 +87,7 @@ This function should only modify configuration layer settings."
                   tree-sitter-fold-enable t
                   tree-sitter-fold-indicators-enable nil)
      version-control
+     themes-megapack
      treemacs
      windows-scripts
      (xclipboard :variables xclipboard-enable-cliphist t)
@@ -99,7 +102,7 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '(emmet-mode ox-reveal vega-view org-superstar)
+   dotspacemacs-additional-packages '(emmet-mode ox-reveal vega-view org-superstar beancount)
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -250,7 +253,9 @@ It should only modify the values of Spacemacs settings."
    ;; `:location' to download the theme package, refer the themes section in
    ;; DOCUMENTATION.org for the full theme specifications.
    dotspacemacs-themes '(spacemacs-dark
-                         spacemacs-light)
+                         doom-solarized-dark
+                         spacemacs-light
+                         doom-solarized-light)
 
    ;; Set the theme for the Spaceline. Supported themes are `spacemacs',
    ;; `all-the-icons', `custom', `doom', `vim-powerline' and `vanilla'. The
@@ -271,7 +276,7 @@ It should only modify the values of Spacemacs settings."
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
    dotspacemacs-default-font '("Fira Code"
-                               :size 10.0
+                               :size 12.0
                                :weight normal
                                :width normal)
 
@@ -636,52 +641,35 @@ This function is called at the very end of Spacemacs initialization."
    ;; Your init file should contain only one such instance.
    ;; If there is more than one, they won't work right.
    '(package-selected-packages
-     '(a ac-ispell ace-jump-helm-line ace-link ace-window aggressive-indent
-         all-the-icons auto-compile auto-complete auto-highlight-symbol
-         auto-yasnippet blacken bmx-mode browse-at-remote centered-cursor-mode
-         cfrs cider cider-eval-sexp-fu clean-aindent-mode clojure-mode
-         clojure-snippets closql code-cells code-review column-enforce-mode
-         company-anaconda company-lua csv-mode cython-mode deferred define-word
-         devdocs diminish dired-quick-sort dotenv-mode drag-stuff dumb-jump
-         editorconfig elisp-def elisp-slime-nav emacsql emmet-mode emojify emr
-         esh-help eshell-prompt-extras eshell-z ess-R-data-view evil-anzu
-         evil-args evil-cleverparens evil-collection evil-easymotion evil-escape
-         evil-evilified-state evil-exchange evil-goggles evil-iedit-state
-         evil-indent-plus evil-lion evil-lisp-state evil-matchit evil-mc
-         evil-nerd-commenter evil-numbers evil-org evil-surround evil-textobj-line
-         evil-tutor evil-unimpaired evil-visual-mark-mode evil-visualstar
-         expand-region eyebrowse fancy-battery flx-ido flycheck-elsa
-         flycheck-package flycheck-pos-tip forge fsharp-mode fuzzy ggtags gh-md
-         ghub git-commit git-gutter-fringe git-link git-messenger git-modes
-         git-timemachine gitignore-templates gnuplot golden-ratio google-translate
-         gptel haml-mode helm helm-ag helm-c-yasnippet helm-cider helm-company
-         helm-css-scss helm-descbinds helm-git-grep helm-ls-git helm-lsp helm-make
-         helm-mode-manager helm-org helm-org-rifle helm-projectile helm-purpose
-         helm-pydoc helm-swoop helm-themes helm-xref hide-comnt
-         highlight-indentation highlight-numbers highlight-parentheses hl-todo
-         holy-mode htmlize hungry-delete hybrid-mode importmagic indent-guide
-         info+ inspector ivy link-hint live-py-mode lorem-ipsum lsp-mode
-         lsp-origami lsp-pyright lsp-python-ms lsp-treemacs lsp-ui lua-mode
-         macrostep magit magit-section markdown-mode markdown-toc mmm-mode
-         multi-line multi-term mwim nameless nose nrepl-sync open-junk-file
-         org-cliplink org-contrib org-download org-mime org-pomodoro org-present
-         org-projectile org-re-reveal org-rich-yank org-superstar orgit overseer
-         ox-reveal paradox parseedn password-generator pcre2el pip-requirements
-         pipenv pippel poetry popwin powershell prettier-js pug-mode py-isort
-         pydoc pyenv-mode pylookup pytest quickrun rainbow-delimiters request
-         restart-emacs scss-mode sesman shell-pop simple-httpd slim-mode
-         smartparens smeargle space-doc spaceline spacemacs-purpose-popwin
-         spacemacs-whitespace-cleanup sphinx-doc string-edit-at-point
-         string-inflection symbol-overlay symon tagedit term-cursor terminal-here
-         toc-org toml-mode transient treemacs treemacs-evil treemacs-icons-dired
-         treemacs-magit treemacs-persp treemacs-projectile treepy undo-tree unfill
-         uuidgen vi-tilde-fringe vim-powerline volatile-highlights web-beautify
-         web-mode wfnames which-key winum with-editor writeroom-mode ws-butler
-         xterm-color yaml yaml-mode yapfify yasnippet yasnippet-snippets)))
+     '(afternoon-theme alect-themes ample-theme ample-zen-theme anti-zenburn-theme apropospriate-theme badwolf-theme birds-of-paradise-plus-theme bubbleberry-theme busybee-theme cherry-blossom-theme chocolate-theme clues-theme color-theme-sanityinc-solarized color-theme-sanityinc-tomorrow cyberpunk-theme dakrone-theme darkmine-theme darkokai-theme darktooth-theme django-theme doom-themes dracula-theme ef-themes espresso-theme exotica-theme eziam-themes farmhouse-themes flatland-theme flatui-theme gandalf-theme gotham-theme grandshell-theme groovy-imports pcache groovy-mode gruber-darker-theme gruvbox-theme hc-zenburn-theme hemisu-theme heroku-theme inkpot-theme ir-black-theme jazz-theme jbeans-theme kaolin-themes light-soap-theme lush-theme madhat2r-theme material-theme minimal-theme modus-themes moe-theme molokai-theme monochrome-theme monokai-theme mustang-theme naquadah-theme noctilux-theme obsidian-theme occidental-theme oldlace-theme omtose-phellack-themes organic-green-theme phoenix-dark-mono-theme phoenix-dark-pink-theme planet-theme professional-theme purple-haze-theme railscasts-theme rebecca-theme reverse-theme seti-theme smyx-theme soft-charcoal-theme soft-morning-theme soft-stone-theme solarized-theme soothe-theme autothemer spacegray-theme subatomic-theme subatomic256-theme sublime-themes sunny-day-theme tango-2-theme tango-plus-theme tangotango-theme tao-theme toxi-theme twilight-anti-bright-theme twilight-bright-theme twilight-theme ujelly-theme underwater-theme white-sand-theme zen-and-art-theme zenburn-theme zonokai-emacs a ac-ispell ace-jump-helm-line ace-link ace-window aggressive-indent all-the-icons auto-compile auto-complete auto-highlight-symbol auto-yasnippet blacken bmx-mode browse-at-remote centered-cursor-mode cfrs cider cider-eval-sexp-fu clean-aindent-mode clojure-mode clojure-snippets closql code-cells code-review column-enforce-mode company-anaconda company-lua csv-mode cython-mode deferred define-word devdocs diminish dired-quick-sort dotenv-mode drag-stuff dumb-jump editorconfig elisp-def elisp-slime-nav emacsql emmet-mode emojify emr esh-help eshell-prompt-extras eshell-z ess-R-data-view evil-anzu evil-args evil-cleverparens evil-collection evil-easymotion evil-escape evil-evilified-state evil-exchange evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state evil-matchit evil-mc evil-nerd-commenter evil-numbers evil-org evil-surround evil-textobj-line evil-tutor evil-unimpaired evil-visual-mark-mode evil-visualstar expand-region eyebrowse fancy-battery flx-ido flycheck-elsa flycheck-package flycheck-pos-tip forge fsharp-mode fuzzy ggtags gh-md ghub git-commit git-gutter-fringe git-link git-messenger git-modes git-timemachine gitignore-templates gnuplot golden-ratio google-translate gptel haml-mode helm helm-ag helm-c-yasnippet helm-cider helm-company helm-css-scss helm-descbinds helm-git-grep helm-ls-git helm-lsp helm-make helm-mode-manager helm-org helm-org-rifle helm-projectile helm-purpose helm-pydoc helm-swoop helm-themes helm-xref hide-comnt highlight-indentation highlight-numbers highlight-parentheses hl-todo holy-mode htmlize hungry-delete hybrid-mode importmagic indent-guide info+ inspector ivy link-hint live-py-mode lorem-ipsum lsp-mode lsp-origami lsp-pyright lsp-python-ms lsp-treemacs lsp-ui lua-mode macrostep magit magit-section markdown-mode markdown-toc mmm-mode multi-line multi-term mwim nameless nose nrepl-sync open-junk-file org-cliplink org-contrib org-download org-mime org-pomodoro org-present org-projectile org-re-reveal org-rich-yank org-superstar orgit overseer ox-reveal paradox parseedn password-generator pcre2el pip-requirements pipenv pippel poetry popwin powershell prettier-js pug-mode py-isort pydoc pyenv-mode pylookup pytest quickrun rainbow-delimiters request restart-emacs scss-mode sesman shell-pop simple-httpd slim-mode smartparens smeargle space-doc spaceline spacemacs-purpose-popwin spacemacs-whitespace-cleanup sphinx-doc string-edit-at-point string-inflection symbol-overlay symon tagedit term-cursor terminal-here toc-org toml-mode transient treemacs treemacs-evil treemacs-icons-dired treemacs-magit treemacs-persp treemacs-projectile treepy undo-tree unfill uuidgen vi-tilde-fringe vim-powerline volatile-highlights web-beautify web-mode wfnames which-key winum with-editor writeroom-mode ws-butler xterm-color yaml yaml-mode yapfify yasnippet yasnippet-snippets)))
   (custom-set-faces
    ;; custom-set-faces was added by Custom.
    ;; If you edit it by hand, you could mess it up, so be careful.
    ;; Your init file should contain only one such instance.
    ;; If there is more than one, they won't work right.
-   )
+   '(line-number ((t (:inherit fixed-pitch))))
+   '(line-number-current-line ((t (:inherit fixed-pitch))))
+   '(linum ((t (:inherit fixed-pitch))))
+   '(org-block ((t (:inherit fixed-pitch))))
+   '(org-block-begin-line ((t (:inherit fixed-pitch))))
+   '(org-block-end-line ((t (:inherit fixed-pitch))))
+   '(org-checkbox ((t (:inherit fixed-pitch))))
+   '(org-code ((t (:inherit fixed-pitch))))
+   '(org-default ((t (:inherit variable-pitch))))
+   '(org-document-info ((t (:inherit variable-pitch))))
+   '(org-document-info-keyword ((t (:inherit fixed-pitch))))
+   '(org-document-title ((t (:weight semibold :font "Fira Sans" :height 1.15 :underline nil :weight bold))))
+   '(org-level-1 ((t (:weight semibold :font "Fira Sans" :height 1.35))))
+   '(org-level-2 ((t (:weight semibold :font "Fira Sans" :height 1.25))))
+   '(org-level-3 ((t (:weight semibold :font "Fira Sans" :height 1.18))))
+   '(org-level-4 ((t (:weight semibold :font "Fira Sans" :height 1.1))))
+   '(org-level-5 ((t (:weight semibold :font "Fira Sans" :height 1.05))))
+   '(org-level-6 ((t (:weight semibold :font "Fira Sans" :height 1.0))))
+   '(org-level-7 ((t (:weight semibold :font "Fira Sans" :height 1.0))))
+   '(org-level-8 ((t (:weight semibold :font "Fira Sans" :height 1.0))))
+   '(org-meta-line ((t (:inherit fixed-pitch))))
+   '(org-special-keyword ((t (:inherit fixed-pitch))))
+   '(org-table ((t (:inherit fixed-pitch))))
+   '(org-tag ((t (:inherit fixed-pitch))))
+   '(org-verbatim ((t (:inherit fixed-pitch)))))
   )

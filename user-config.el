@@ -51,7 +51,8 @@
 (spacemacs/set-leader-keys-for-major-mode 'clojure-mode
   "s s" 'cider-switch-to-repl-buffer)
 (spacemacs/set-leader-keys-for-major-mode 'org-mode
-  "g" 'org-todo)
+  "g" 'org-todo
+  "|" 'org-columns)
 (with-eval-after-load 'paredit
   ;; Disable the default RET keybinding in paredit-mode
   (define-key paredit-mode-map (kbd "RET") nil)
@@ -78,6 +79,10 @@
 
 ;; === Org-mode ===
 (with-eval-after-load 'org
+
+  ;; save clock history across Emacs sessions
+  (setq org-clock-persist 'history)
+  (org-clock-persistence-insinuate)
 
   ;; Start in visual-line-mode
   (add-hook 'org-mode-hook #'visual-line-mode)
@@ -121,8 +126,8 @@
                 (t (warn "Org mono: no monospace font found; using default.") nil)))
 
          ;; Sizes: these are the two knobs you’ll tweak most.
-         (vp-height 90)   ;; body prose (Crimson)
-         (fp-height 80)   ;; code/tables (Fira Code)
+         (vp-height 110)   ;; body prose (Crimson)
+         (fp-height 90)   ;; code/tables (Fira Code)
          (headline `(:weight semibold)))
 
     ;; variable-pitch / fixed-pitch base faces
@@ -207,11 +212,11 @@
         org-agenda-files (list (expand-file-name "main.org" org-directory))
         org-default-notes-file (expand-file-name "main.org" org-directory)
         org-capture-templates
-        `(("t" "Todo" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Backlog")
+        `(("t" "Todo" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Open")
            "* TODO %?\nSCHEDULED: %t" :prepend t)
-          ("n" "Next action" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Backlog")
+          ("n" "Next action" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Open")
            "* NEXT %?\nSCHEDULED: %t" :prepend t)
-          ("w" "Waiting" entry (file+headline ,(expand-file-name "main.org" org-directory) "Tasks" "Backlog")
+          ("w" "Waiting" entry (file+headline ,(expand-file-name "main.org" org-directory) "Tasks" "Open")
            "* WAIT %?\nSCHEDULED: %t" :prepend t)
           ("m" "Meeting" entry (file+olp ,(expand-file-name "main.org" org-directory) "Meetings")
            "* %? %u\n%t\n** Notes\n** Action items" :clock-in t :clock-resume t)
@@ -238,6 +243,7 @@
                                    (clojure . t)
                                    (sql . t))
         org-babel-clojure-backend 'cider
+        ob-clojure-babashka-command (executable-find "bb")
         nrepl-sync-request-timeout nil
         org-confirm-babel-evaluate nil
         org-file-apps '((auto-mode . emacs))
@@ -280,11 +286,11 @@
 
 (gptel-make-anthropic "Claude"
   :stream t
-  :key (getenv "ANTHROPIC-API-KEY"))
+  :key (lambda () (getenv "ANTHROPIC_API_KEY")))
 
 (gptel-make-gemini "Gemini"
   :stream t
-  :key (getenv "GEMINI-API-KEY"))
+  :key (lambda () (getenv "GEMINI_API_KEY")))
 
 (with-eval-after-load 'ob-python
   (setq org-babel-python-command "python3"))
