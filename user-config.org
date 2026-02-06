@@ -28,7 +28,22 @@ A full Spacemacs setup requires more than just the Emacs packages, it requires a
 #+begin_src bash
   curl -LsSf https://astral.sh/uv/install.sh | sh
 #+end_src
+*** Install fonts
 
+**** Crimson Text
+#+begin_src bash :tangle no
+  mkdir -p ~/.local/share/fonts/CrimsonText
+  cd ~/.local/share/fonts/CrimsonText
+
+  wget https://github.com/google/fonts/raw/main/ofl/crimsontext/CrimsonText-Regular.ttf
+  wget https://github.com/google/fonts/raw/main/ofl/crimsontext/CrimsonText-Italic.ttf
+  wget https://github.com/google/fonts/raw/main/ofl/crimsontext/CrimsonText-SemiBold.ttf
+  wget https://github.com/google/fonts/raw/main/ofl/crimsontext/CrimsonText-SemiBoldItalic.ttf
+  wget https://github.com/google/fonts/raw/main/ofl/crimsontext/CrimsonText-Bold.ttf
+  wget https://github.com/google/fonts/raw/main/ofl/crimsontext/CrimsonText-BoldItalic.ttf
+
+  fc-cache -fv
+#+end_src
 * User config
 Spacemacs user config in literate programming form. This drops right into the =dotspacemacs/user-config= section of =init.el=.
 
@@ -72,13 +87,11 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
   ;; For use with org-reveal
   (with-eval-after-load 'sgml-mode
     (require 'emmet-mode)
-    (add-hook 'sgml-mode-hook 'emmet-mode) ;; For HTML
-    (add-hook 'css-mode-hook 'emmet-mode)) ;; For CSS
+    (add-hook 'sgml-mode-hook #'emmet-mode)
+    (add-hook 'css-mode-hook #'emmet-mode))
+
   (with-eval-after-load 'sql
-    ;; Ensure that only a line that starts with GO (optionally with trailing whitespace)
-    ;; is treated as a batch terminator.
     (setq sql-comint-go-regexp "^GO[ \t]*$")
-    ;; Your existing settings for sqlcmd:
     (setq sql-ms-program "sqlcmd")
     (setq sql-ms-options '("-E"))
     (setq sql-server "RiskLiveSQL")
@@ -92,22 +105,23 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
   ;; Custom keybindings
   (spacemacs/set-leader-keys
     "f R" 'recover-this-file
-    "f n" 'spacemacs/rename-current-buffer-file
-    )
+    "f n" 'spacemacs/rename-current-buffer-file)
+
   (spacemacs-bootstrap/init-which-key)
+
   (which-key-add-key-based-replacements
-    "SPC f n" "Rename")
-  (which-key-add-key-based-replacements
+    "SPC f n" "Rename"
     "SPC f R" "Recover")
+
   (spacemacs/set-leader-keys-for-major-mode 'clojure-mode
     "s s" 'cider-switch-to-repl-buffer)
+
   (spacemacs/set-leader-keys-for-major-mode 'org-mode
     "g" 'org-todo
     "|" 'org-columns)
+
   (with-eval-after-load 'paredit
-    ;; Disable the default RET keybinding in paredit-mode
     (define-key paredit-mode-map (kbd "RET") nil)
-    ;; Rebind RET in cider-repl-mode to support new lines without sending code
     (add-hook 'cider-repl-mode-hook
               (lambda ()
                 (local-set-key (kbd "RET") 'cider-repl-newline-and-indent)
@@ -127,175 +141,158 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
 #+begin_src emacs-lisp :tangle yes
   ;; Fixes for ESS-R mode
   (add-hook 'ess-r-mode-hook #'lsp)
+
   (with-eval-after-load 'lsp-mode
     (require 'lsp-r)
     (add-hook 'ess-r-mode-hook #'lsp))
+
   (setq lsp-prefer-flymake nil)
   (setq lsp-log-io t)
   (add-hook 'ess-r-mode-hook (lambda () (flycheck-mode -1)))
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
-  ;; === Org-mode ===
-  (defconst my/org-home
-    (file-truename
-     (or (getenv "ORG_HOME")
-         (error "ORG_HOME is not set in spacemacs.env"))))
+  ;; Org root (single source of truth)
+  (defconst my/org-home "/home/aaron/org/my-org/"
+    "Root directory for Org files on this machine.")
 
   (unless (file-directory-p my/org-home)
-    (error "ORG_HOME does not exist: %s" my/org-home))
+    (warn "Org home does not exist: %s" my/org-home))
 
+  ;; All Org-specific config must wait until Org is loaded (Spacemacs lazy-load).
   (with-eval-after-load 'org
 
-    ;; save clock history across Emacs sessions
+    ;; --- Org-mode UX ---
     (setq org-clock-persist 'history)
     (org-clock-persistence-insinuate)
 
-    ;; Start in visual-line-mode
     (add-hook 'org-mode-hook #'visual-line-mode)
+    (add-hook 'org-mode-hook #'variable-pitch-mode)
 
-    ;; Replace list item markers like "-" with a bullet, and optionally prettify headlines.
     (use-package org-superstar
       :ensure t
       :after org
       :hook (org-mode . org-superstar-mode)
       :config
-      ;; List bullets: treat -, +, * as the same nice bullet.
       (setq org-superstar-item-bullet-alist '((?- . ?•) (?+ . ?•) (?* . ?•)))
+      (setq org-superstar-remove-leading-stars t))
 
-      ;; Keep indentation behavior sane (Spacemacs often enables org-indent)
-      (setq org-superstar-remove-leading-stars t)
-
-      ;; If you want headline stars to stay as stars (no fancy glyphs), keep these nil:
-      ;; (setq org-superstar-headline-bullets-list nil)
-      )
-
-    ;; Choose fonts with fallback logic (PGTK/X11/macOS safe)
-    (defun my/font-available-p (family)
-      (member family (font-family-list)))
-
-    (let* ((body-tuple
-            (cond ((my/font-available-p "Crimson Text") '(:family "Crimson Text"))
-                  ((my/font-available-p "Crimson")      '(:family "Crimson"))
-                  ((my/font-available-p "DejaVu Serif") '(:family "DejaVu Serif"))
-                  ((my/font-available-p "Serif")        '(:family "Serif"))
-                  (t (warn "Org body: no serif font found") nil)))
-           (header-tuple
-            (cond ((my/font-available-p "Ubuntu")      '(:family "Ubuntu"))
-                  ((my/font-available-p "DejaVu Sans") '(:family "DejaVu Sans"))
-                  ((my/font-available-p "Sans Serif")  '(:family "Sans Serif"))
-                  (t (warn "Org headers: no sans font found") nil)))
-           (mono-tuple
-            (cond ((my/font-available-p "Fira Code")        '(:family "Fira Code"))
-                  ((my/font-available-p "DejaVu Sans Mono") '(:family "DejaVu Sans Mono"))
-                  ((my/font-available-p "Ubuntu Mono")      '(:family "Ubuntu Mono"))
-                  ((my/font-available-p "Monospace")        '(:family "Monospace"))
-                  (t (warn "Org mono: no monospace font found") nil)))
-
-           ;; Sizes: these are the two knobs you’ll tweak most.
-           (vp-height 110)   ;; body prose (Crimson)
-           (fp-height 90)   ;; code/tables (Fira Code)
-           (headline `(:weight semibold)))
-
-      ;; variable-pitch / fixed-pitch base faces
-      (when body-tuple
-        (apply #'set-face-attribute 'variable-pitch nil
-               :height vp-height
-               (if (plist-get body-tuple :font)
-                   (list :family (plist-get body-tuple :font))
-                 (list :family (plist-get body-tuple :family)))))
-
-      (when mono-tuple
-        (apply #'set-face-attribute 'fixed-pitch nil
-               :height fp-height
-               (if (plist-get mono-tuple :font)
-                   (list :family (plist-get mono-tuple :font))
-                 (list :family (plist-get mono-tuple :family)))))
-
-      ;; Enable variable pitch automatically in Org buffers
-      (add-hook 'org-mode-hook #'variable-pitch-mode)
-
-      ;; Org faces
-      (custom-theme-set-faces
-       'user
-
-       ;; Body (prose)
-       `(org-default ((t (:inherit variable-pitch))))
-       `(org-document-info ((t (:inherit variable-pitch))))
-       `(org-document-info-keyword ((t (:inherit fixed-pitch))))
-
-       ;; Title
-       `(org-document-title ((t (,@headline ,@header-tuple :height 1.15 :underline nil :weight bold))))
-
-       ;; Headings
-       `(org-level-8 ((t (,@headline ,@header-tuple :height 1.00))))
-       `(org-level-7 ((t (,@headline ,@header-tuple :height 1.00))))
-       `(org-level-6 ((t (,@headline ,@header-tuple :height 1.00))))
-       `(org-level-5 ((t (,@headline ,@header-tuple :height 1.05))))
-       `(org-level-4 ((t (,@headline ,@header-tuple :height 1.10))))
-       `(org-level-3 ((t (,@headline ,@header-tuple :height 1.18))))
-       `(org-level-2 ((t (,@headline ,@header-tuple :height 1.25))))
-       `(org-level-1 ((t (,@headline ,@header-tuple :height 1.35))))
-
-       ;; Monospace elements
-       `(org-block ((t (:inherit fixed-pitch))))
-       `(org-block-begin-line ((t (:inherit fixed-pitch))))
-       `(org-block-end-line ((t (:inherit fixed-pitch))))
-       `(org-code ((t (:inherit fixed-pitch))))
-       `(org-verbatim ((t (:inherit fixed-pitch))))
-       `(org-table ((t (:inherit fixed-pitch))))
-       `(org-meta-line ((t (:inherit fixed-pitch))))
-       `(org-checkbox ((t (:inherit fixed-pitch))))
-       `(org-special-keyword ((t (:inherit fixed-pitch))))
-       `(org-tag ((t (:inherit fixed-pitch))))
-
-       ;; Line numbers: keep monospace even with variable-pitch-mode
-       `(line-number ((t (:inherit fixed-pitch))))
-       `(line-number-current-line ((t (:inherit fixed-pitch))))
-       `(linum ((t (:inherit fixed-pitch))))))
-
-    ;; tangle-on-save
-    (add-hook 'org-mode-hook
-              (lambda () (add-hook 'after-save-hook #'org-babel-tangle
-                                   :append :local)))
-
-    ;; code snippets
+    ;; --- Structure templates ---
     (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-    (add-to-list 'org-structure-template-alist '("r" . "src R"))
+    (add-to-list 'org-structure-template-alist '("r"  . "src R"))
     (add-to-list 'org-structure-template-alist '("clj" . "src clojure"))
     (add-to-list 'org-structure-template-alist '("sql" . "src sql"))
 
-    ;; Force org ellipsis glyph to render with fixed-pitch (symbol coverage)
+    ;; --- Font setup (fixed; matches the "works" behavior) ---
+
+    (defun my/font-tuple (font-candidates family-fallback warn-msg)
+      "Return plist like (:font \"Name\") or (:family \"Family\"), or nil."
+      (or (seq-some (lambda (f) (when (x-list-fonts f) (list :font f)))
+                    font-candidates)
+          (when (x-family-fonts family-fallback)
+            (list :family family-fallback))
+          (progn (warn "%s" warn-msg) nil)))
+
+    (defun my/org-font-tuples ()
+      (let ((body
+             (my/font-tuple
+              '("Crimson" "Crimson Text" "DejaVu Serif")
+              "Serif"
+              "Org body: no serif font found; using default."))
+            (header
+             (my/font-tuple
+              '("Fira Sans" "Fira Sans Condensed" "Ubuntu Sans" "DejaVu Sans")
+              "Sans Serif"
+              "Org headers: no sans font found; using default."))
+            (mono
+             (my/font-tuple
+              '("Fira Code" "Fira Mono" "DejaVu Sans Mono" "Ubuntu Mono")
+              "Monospace"
+              "Org mono: no monospace font found; using default.")))
+        (list body header mono)))
+
+    (defun my/apply-face-font (face height tuple)
+      "Apply HEIGHT and font from TUPLE to FACE.
+  TUPLE is either (:font \"Name\") or (:family \"Family\")."
+      (when tuple
+        (set-face-attribute
+         face nil
+         :height height
+         :family (or (plist-get tuple :font)
+                     (plist-get tuple :family)))))
+
+    (defun my/apply-org-fonts ()
+      (pcase-let* ((`(,body-tuple ,header-tuple ,mono-tuple) (my/org-font-tuples))
+                   (vp-height 110)
+                   (fp-height 90)
+                   (headline '(:weight semibold)))
+
+        ;; Base faces
+        (my/apply-face-font 'variable-pitch vp-height body-tuple)
+        (my/apply-face-font 'fixed-pitch   fp-height mono-tuple)
+
+        ;; Enable variable pitch automatically in Org buffers
+        (add-hook 'org-mode-hook #'variable-pitch-mode)
+
+        ;; Org faces
+        (custom-theme-set-faces
+         'user
+         `(org-default ((t (:inherit variable-pitch))))
+         `(org-document-info ((t (:inherit variable-pitch))))
+         `(org-document-info-keyword ((t (:inherit fixed-pitch))))
+
+         `(org-document-title
+           ((t (,@headline
+                ,@header-tuple
+                :height 1.15
+                :underline nil
+                :weight bold))))
+
+         `(org-level-8 ((t (,@headline ,@header-tuple :height 1.00))))
+         `(org-level-7 ((t (,@headline ,@header-tuple :height 1.00))))
+         `(org-level-6 ((t (,@headline ,@header-tuple :height 1.00))))
+         `(org-level-5 ((t (,@headline ,@header-tuple :height 1.05))))
+         `(org-level-4 ((t (,@headline ,@header-tuple :height 1.10))))
+         `(org-level-3 ((t (,@headline ,@header-tuple :height 1.18))))
+         `(org-level-2 ((t (,@headline ,@header-tuple :height 1.25))))
+         `(org-level-1 ((t (,@headline ,@header-tuple :height 1.35))))
+
+         `(org-block ((t (:inherit fixed-pitch))))
+         `(org-block-begin-line ((t (:inherit fixed-pitch))))
+         `(org-block-end-line ((t (:inherit fixed-pitch))))
+         `(org-code ((t (:inherit fixed-pitch))))
+         `(org-verbatim ((t (:inherit fixed-pitch))))
+         `(org-table ((t (:inherit fixed-pitch))))
+         `(org-meta-line ((t (:inherit fixed-pitch))))
+         `(org-checkbox ((t (:inherit fixed-pitch))))
+         `(org-special-keyword ((t (:inherit fixed-pitch))))
+         `(org-tag ((t (:inherit fixed-pitch))))
+
+         `(line-number ((t (:inherit fixed-pitch))))
+         `(line-number-current-line ((t (:inherit fixed-pitch))))
+         `(linum ((t (:inherit fixed-pitch)))))))
+
+    ;; Apply after theme loads (and immediately once, so you don’t need a theme toggle)
+    (add-hook 'after-load-theme-hook #'my/apply-org-fonts)
+    (my/apply-org-fonts)
+
+
+    ;; Make ellipsis render in monospace (symbol coverage)
     (set-face-attribute 'org-ellipsis nil :inherit 'fixed-pitch)
 
-    ;; Moved org :variables here
+    ;; --- Org core settings ---
     (require 'cider)
     (add-to-list 'org-babel-tangle-lang-exts '("clojure" . "clj"))
+
     (setq org-src-window-setup 'split-window-right
           org-enable-reveal-js-support t
           org-insert-heading-respect-content t
           org-startup-indented t
-          org-directory my/org-home
-          org-agenda-files (list (expand-file-name "main.org" my/org-home))
-          org-default-notes-file (expand-file-name "main.org" my/org-home)
-          org-capture-templates
-          `(("t" "Todo" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Open")
-             "* TODO %?\nSCHEDULED: %t" :prepend t)
-            ("n" "Next action" entry (file+olp ,(expand-file-name "main.org" org-directory) "Tasks" "Open")
-             "* NEXT %?\nSCHEDULED: %t" :prepend t)
-            ("w" "Waiting" entry (file+headline ,(expand-file-name "main.org" org-directory) "Tasks" "Open")
-             "* WAIT %?\nSCHEDULED: %t" :prepend t)
-            ("m" "Meeting" entry (file+olp ,(expand-file-name "main.org" org-directory) "Meetings")
-             "* %? %u\n%t\n** Notes\n** Action items" :clock-in t :clock-resume t)
-            ("M" "Meeting (plan)" entry (file+headline ,(expand-file-name "main.org" org-directory) "Meetings")
-             "* %? \nSCHEDULED: %^T\nOBJECTIVE: \n** Agenda\n** Notes\n** Action items")
-            ("e" "Email or message" entry (file+headline ,(expand-file-name "main.org" org-directory) "Messages")
-             "* %?\nSCHEDULED: %t\n[[file:%(expand-file-name (format \"messages/%s.msg\" (format-time-string \"%Y%m%d-%H%M%S\")) org-directory)]]"
-             :prepend t)
-            ("p" "Paste clipboard" entry (file+headline ,(expand-file-name "main.org" org-directory) "UNFILED")
-             "* %?\n\n%x")
-            ("i" "Idea" entry (file+headline ,(expand-file-name "main.org" org-directory) "Ideas")
-             "* %? \n%t"))
+          org-directory (file-truename my/org-home)
+          org-agenda-files (list
+                            (expand-file-name "main.org"  org-directory)
+                            (expand-file-name "tasks.org" org-directory))
+          org-default-notes-file (expand-file-name "main.org" org-directory)
           org-agenda-skip-deadline-if-done t
           org-agenda-skip-scheduled-if-done t
           org-want-todo-bindings t
@@ -314,14 +311,33 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
           nrepl-sync-request-timeout nil
           org-confirm-babel-evaluate nil
           org-file-apps '((auto-mode . emacs))
-          org-insert-heading-respect-content t
-          org-refile-targets (quote ((nil :maxlevel . 9) (org-agenda-files :maxlevel . 9)))
+          org-refile-targets '((nil :maxlevel . 9)
+                               (org-agenda-files :maxlevel . 9))
           org-startup-with-inline-images t
-          org-agenda-custom-commands '())
+          org-agenda-custom-commands '()
+          org-capture-templates
+          `(("t" "Todo" entry (file+olp ,(expand-file-name "tasks.org" org-directory) "Open")
+             "* TODO %?\nSCHEDULED: %t" :prepend t)
+            ("n" "Next action" entry (file+olp ,(expand-file-name "tasks.org" org-directory) "Open")
+             "* NEXT %?\nSCHEDULED: %t" :prepend t)
+            ("w" "Waiting" entry (file+headline ,(expand-file-name "tasks.org" org-directory) "Open")
+             "* WAIT %?\nSCHEDULED: %t" :prepend t)
+            ("m" "Meeting" entry (file+olp ,(expand-file-name "main.org" org-directory) "Meetings")
+             "* %? %u\n%t\n** Notes\n** Action items" :clock-in t :clock-resume t)
+            ("M" "Meeting (plan)" entry (file+headline ,(expand-file-name "main.org" org-directory) "Meetings")
+             "* %?\nSCHEDULED: %^T\nOBJECTIVE:\n** Agenda\n** Notes\n** Action items")
+            ("e" "Email or message" entry (file+headline ,(expand-file-name "main.org" org-directory) "Messages")
+             "* %?\nSCHEDULED: %t\n[[file:%(expand-file-name (format \"messages/%s.msg\" (format-time-string \"%Y%m%d-%H%M%S\")) org-directory)]]"
+             :prepend t)
+            ("p" "Paste clipboard" entry (file+headline ,(expand-file-name "main.org" org-directory) "UNFILED")
+             "* %?\n\n%x")
+            ("i" "Idea" entry (file+headline ,(expand-file-name "main.org" org-directory) "Ideas")
+             "* %?\n%t")))
 
-    ;; Make sure org-reveal is loaded
+    ;; org-reveal
     (require 'ox-reveal)
     (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+
     (add-to-list 'org-agenda-custom-commands
                  '("g" "GTD View"
                    tags "+SCHEDULED<=\"<+0d>\""
@@ -331,6 +347,7 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
                      '(org-agenda-skip-entry-if 'nottodo 'todo))
                     (org-agenda-sorting-strategy '(priority-down scheduled-down))
                     (org-agenda-view-columns-initially t))))
+
     (add-to-list 'org-agenda-custom-commands
                  '("d" "Deadline in next month"
                    tags "+DEADLINE<=\"<+2m>\""
@@ -342,10 +359,15 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
                     (org-agenda-sorting-strategy '(deadline-up))
                     (org-agenda-view-columns-initially t))))
 
-    ;; Adding duckdb to org-babel
+    ;; duckdb org-babel
     (add-to-list 'org-babel-load-languages '(duckdb . t))
     (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
     (add-to-list 'org-src-lang-modes '("duckdb" . sql)))
+
+  ;; tangle-on-save (local to org buffers)
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (add-hook 'after-save-hook #'org-babel-tangle :append :local)))
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
@@ -369,8 +391,8 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
     (setq org-babel-python-command "python3"))
 #+end_src
 
-Beancount mode for finance
-#+begin_src elisp
+* Beancount mode for finance
+#+begin_src emacs-lisp :tangle yes
   (add-to-list 'load-path "~/.emacs.d/private/beancount-mode")
   (require 'beancount)
   (add-to-list 'auto-mode-alist '("\\.beancount\\'" . beancount-mode))
