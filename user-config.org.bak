@@ -55,14 +55,6 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
 #+end_src
 
 #+begin_src emacs-lisp :tangle yes
-  ;; Reasonable startup frame size instead of spanning all monitors
-  (setq default-frame-alist
-        (append '((width . 80)
-                  (height . 30))
-                default-frame-alist))
-#+end_src
-
-#+begin_src emacs-lisp :tangle yes
   ;; custom packages not from ELPA/MELPA
   (add-to-list 'load-path "~/.spacemacs.d/elisp/ob-duckdb/")
   (require 'ob-duckdb)
@@ -190,7 +182,6 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
     (add-to-list 'org-structure-template-alist '("r"  . "src R"))
     (add-to-list 'org-structure-template-alist '("clj" . "src clojure"))
     (add-to-list 'org-structure-template-alist '("sql" . "src sql"))
-    (add-to-list 'org-structure-template-alist '("bash" . "src bash"))
 
     ;; --- Font setup (fixed; matches the "works" behavior) ---
 
@@ -314,8 +305,7 @@ Remove =:tangle yes= from a header if you don't want it to be added. This allows
                                      (R . t)
                                      (python . t)
                                      (clojure . t)
-                                     (sql . t)
-                                     (shell . t))
+                                     (sql . t))
           org-babel-clojure-backend 'cider
           ob-clojure-babashka-command (executable-find "bb")
           nrepl-sync-request-timeout nil

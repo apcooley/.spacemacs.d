@@ -1,6 +1,18 @@
 ;; faster project indexing
 (setq projectile-indexing-method 'alien)
 
+;; Reasonable startup frame size instead of spanning all monitors
+(setq default-frame-alist
+      (append '((width . 80)
+                (height . 30))
+              default-frame-alist))
+
+;; Ensure frame size applies to emacsclient frames in daemon mode
+(add-hook 'server-after-make-frame-hook
+          (lambda ()
+            (when (display-graphic-p)
+              (set-frame-size (selected-frame) 80 30))))
+
 ;; custom packages not from ELPA/MELPA
 (add-to-list 'load-path "~/.spacemacs.d/elisp/ob-duckdb/")
 (require 'ob-duckdb)
@@ -108,6 +120,7 @@
   (add-to-list 'org-structure-template-alist '("r"  . "src R"))
   (add-to-list 'org-structure-template-alist '("clj" . "src clojure"))
   (add-to-list 'org-structure-template-alist '("sql" . "src sql"))
+  (add-to-list 'org-structure-template-alist '("bash" . "src bash"))
 
   ;; --- Font setup (fixed; matches the "works" behavior) ---
 
@@ -231,7 +244,8 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
                                    (R . t)
                                    (python . t)
                                    (clojure . t)
-                                   (sql . t))
+                                   (sql . t)
+                                   (shell . t))
         org-babel-clojure-backend 'cider
         ob-clojure-babashka-command (executable-find "bb")
         nrepl-sync-request-timeout nil
@@ -310,6 +324,5 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
 (with-eval-after-load 'ob-python
   (setq org-babel-python-command "python3"))
 
-(add-to-list 'load-path "~/.emacs.d/private/beancount-mode")
-(require 'beancount)
-(add-to-list 'auto-mode-alist '("\\.beancount\\'" . beancount-mode))
+(with-eval-after-load 'ob-python
+  (setq org-babel-python-command "python3"))
