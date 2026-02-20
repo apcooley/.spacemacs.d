@@ -3,15 +3,9 @@
 
 ;; Reasonable startup frame size instead of spanning all monitors
 (setq default-frame-alist
-      (append '((width . 80)
-                (height . 30))
+      (append '((width . 100)
+                (height . 35))
               default-frame-alist))
-
-;; Ensure frame size applies to emacsclient frames in daemon mode
-(add-hook 'server-after-make-frame-hook
-          (lambda ()
-            (when (display-graphic-p)
-              (set-frame-size (selected-frame) 80 30))))
 
 ;; custom packages not from ELPA/MELPA
 (add-to-list 'load-path "~/.spacemacs.d/elisp/ob-duckdb/")
@@ -51,13 +45,15 @@
 ;; Custom keybindings
 (spacemacs/set-leader-keys
   "f R" 'recover-this-file
-  "f n" 'spacemacs/rename-current-buffer-file)
+  "f n" 'spacemacs/rename-current-buffer-file
+  "i e" 'emoji-search)
 
 (spacemacs-bootstrap/init-which-key)
 
 (which-key-add-key-based-replacements
   "SPC f n" "Rename"
-  "SPC f R" "Recover")
+  "SPC f R" "Recover"
+  "SPC i e" "Emoji")
 
 (spacemacs/set-leader-keys-for-major-mode 'clojure-mode
   "s s" 'cider-switch-to-repl-buffer)
@@ -324,5 +320,6 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
 (with-eval-after-load 'ob-python
   (setq org-babel-python-command "python3"))
 
-(with-eval-after-load 'ob-python
-  (setq org-babel-python-command "python3"))
+(add-to-list 'load-path "~/.emacs.d/private/beancount-mode")
+(require 'beancount)
+(add-to-list 'auto-mode-alist '("\\.beancount\\'" . beancount-mode))
