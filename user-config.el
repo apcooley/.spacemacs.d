@@ -1,3 +1,22 @@
+(add-to-list 'auto-mode-alist
+             '("\\.html?\\'" . (lambda ()
+                                 (browse-url-of-file (buffer-file-name))
+                                 (kill-buffer))))
+
+(use-package ligature
+  :ensure t
+  :config
+  (ligature-set-ligatures
+   'prog-mode
+   '("->" "->>" "-<" "-<<" "--" "---" "-->" "<-" "<<"
+     ">>" "<=" ">=" "==" "===" "!=" "!==" "=>" "=>>" "<=>"))
+
+  (global-ligature-mode t))
+
+(use-package pet
+  :config
+  (add-hook 'python-base-mode-hook 'pet-mode -10))
+
 ;; faster project indexing
 (setq projectile-indexing-method 'alien)
 
@@ -32,16 +51,6 @@
   (add-hook 'sgml-mode-hook #'emmet-mode)
   (add-hook 'css-mode-hook #'emmet-mode))
 
-(with-eval-after-load 'sql
-  (setq sql-comint-go-regexp "^GO[ \t]*$")
-  (setq sql-ms-program "sqlcmd")
-  (setq sql-ms-options '("-E"))
-  (setq sql-server "RiskLiveSQL")
-  (setq sql-database "ViveDWDB")
-  (setq sql-user nil)
-  (setq sql-password nil)
-  (setq sql-pop-to-buffer-after-send-region t))
-
 ;; Custom keybindings
 (spacemacs/set-leader-keys
   "f R" 'recover-this-file
@@ -60,7 +69,22 @@
 
 (spacemacs/set-leader-keys-for-major-mode 'org-mode
   "g" 'org-todo
-  "|" 'org-columns)
+  "r I" 'org-id-get-create
+  "r s" 'org-roam-db-sync
+  "| |" 'org-columns
+  "| q" #'org-columns-quit
+  "| r" #'org-columns-redo
+  "| e" #'org-columns-edit-value
+  "| a" #'org-columns-edit-allowed
+  "| n" #'org-columns-next-allowed-value
+  "| p" #'org-columns-previous-allowed-value
+  "| N" #'org-columns-new
+  "| d" #'org-columns-delete
+  "| h" #'org-columns-move-left
+  "| l" #'org-columns-move-right
+  "| >" #'org-columns-widen
+  "| <" #'org-columns-narrow
+  "| i" #'org-columns-insert-dblock)
 
 (with-eval-after-load 'paredit
   (define-key paredit-mode-map (kbd "RET") nil)
@@ -87,7 +111,7 @@
 (add-hook 'ess-r-mode-hook (lambda () (flycheck-mode -1)))
 
 ;; Org root (single source of truth)
-(defconst my/org-home "/home/aaron/org/my-org/"
+(defconst my/org-home "~/org/my-org/"
   "Root directory for Org files on this machine.")
 
 (unless (file-directory-p my/org-home)
@@ -95,6 +119,10 @@
 
 ;; All Org-specific config must wait until Org is loaded (Spacemacs lazy-load).
 (with-eval-after-load 'org
+
+  ;; --- Org-roam multiple headings per file ---
+  (setq org-roam-db-node-include-function
+        (lambda () (org-entry-get nil "ID")))
 
   ;; --- Org-mode UX ---
   (setq org-clock-persist 'history)
@@ -148,7 +176,7 @@
 
   (defun my/apply-face-font (face height tuple)
     "Apply HEIGHT and font from TUPLE to FACE.
-TUPLE is either (:font \"Name\") or (:family \"Family\")."
+       TUPLE is either (:font \"Name\") or (:family \"Family\")."
     (when tuple
       (set-face-attribute
        face nil
@@ -158,8 +186,8 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
 
   (defun my/apply-org-fonts ()
     (pcase-let* ((`(,body-tuple ,header-tuple ,mono-tuple) (my/org-font-tuples))
-                 (vp-height 110)
-                 (fp-height 90)
+                 (vp-height 1.15)
+                 (fp-height 0.95)
                  (headline '(:weight semibold)))
 
       ;; Base faces
@@ -203,9 +231,9 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
        `(org-special-keyword ((t (:inherit fixed-pitch))))
        `(org-tag ((t (:inherit fixed-pitch))))
 
-       `(line-number ((t (:inherit fixed-pitch))))
-       `(line-number-current-line ((t (:inherit fixed-pitch))))
-       `(linum ((t (:inherit fixed-pitch)))))))
+       `(line-number ((t (:inherit fixed-pitch :height 1.0))))
+       `(line-number-current-line ((t (:inherit fixed-pitch :height 1.0))))
+       `(linum ((t (:inherit fixed-pitch :height 1.0)))))))
 
   ;; Apply after theme loads (and immediately once, so you don’t need a theme toggle)
   (add-hook 'after-load-theme-hook #'my/apply-org-fonts)
@@ -224,10 +252,7 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
         org-insert-heading-respect-content t
         org-startup-indented t
         org-directory (file-truename my/org-home)
-        org-agenda-files (list
-                          (expand-file-name "main.org"  org-directory)
-                          (expand-file-name "tasks.org" org-directory))
-        org-default-notes-file (expand-file-name "main.org" org-directory)
+        org-default-notes-file (expand-file-name "tasks.org" org-directory)
         org-agenda-skip-deadline-if-done t
         org-agenda-skip-scheduled-if-done t
         org-want-todo-bindings t
@@ -252,28 +277,71 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
         org-startup-with-inline-images t
         org-agenda-custom-commands '()
         org-capture-templates
+
+        ;; -- TODO | NEXT | WAIT --
+        ;; Places in tasks.org::Open
+        ;; Schedules for the current day
         `(("t" "Todo" entry (file+olp ,(expand-file-name "tasks.org" org-directory) "Open")
            "* TODO %?\nSCHEDULED: %t" :prepend t)
           ("n" "Next action" entry (file+olp ,(expand-file-name "tasks.org" org-directory) "Open")
            "* NEXT %?\nSCHEDULED: %t" :prepend t)
           ("w" "Waiting" entry (file+headline ,(expand-file-name "tasks.org" org-directory) "Open")
            "* WAIT %?\nSCHEDULED: %t" :prepend t)
-          ("m" "Meeting" entry (file+olp ,(expand-file-name "main.org" org-directory) "Meetings")
-           "* %? %u\n%t\n** Notes\n** Action items" :clock-in t :clock-resume t)
-          ("M" "Meeting (plan)" entry (file+headline ,(expand-file-name "main.org" org-directory) "Meetings")
-           "* %?\nSCHEDULED: %^T\nOBJECTIVE:\n** Agenda\n** Notes\n** Action items")
-          ("e" "Email or message" entry (file+headline ,(expand-file-name "main.org" org-directory) "Messages")
+
+          ;; -- Meeting --
+          ;; m is for meeting to start immediately, M is for a meeting in the future
+          ("m" "Meeting" entry (file+olp ,(expand-file-name "meetings.org" org-directory) "UNFILED")
+           "* %? %u\n:PROPERTIES:\n:ID: %(org-id-new)\n:attendees+: [[file:people.org::*Aaron Cooley][Aaron Cooley]]\n\n:END:\n** Agenda\n\n** Notes\n\n** Action Items\n\n*** TODO Item\nSCHEDULED: %t"
+           :clock-in t :clock-resume t)
+          ("M" "Meeting (plan)" entry (file+olp ,(expand-file-name "meetings.org" org-directory) "UNFILED")
+           "* %?\nSCHEDULED: %^{Meeting date/time}T\n:PROPERTIES:\n:ID: %(org-id-new)\n:attendees+: [[file:people.org::*Aaron Cooley][Aaron Cooley]]\n\n:END:\n** Agenda\n\n** Notes\n\n** Action Items\n\n*** TODO Item\nSCHEDULED: %t")
+
+          ;; -- Other randoms --
+          ("e" "Email or message" entry (file+headline ,(expand-file-name "cohere.org" org-directory) "Messages")
            "* %?\nSCHEDULED: %t\n[[file:%(expand-file-name (format \"messages/%s.msg\" (format-time-string \"%Y%m%d-%H%M%S\")) org-directory)]]"
            :prepend t)
-          ("p" "Paste clipboard" entry (file+headline ,(expand-file-name "main.org" org-directory) "UNFILED")
+          ("p" "Paste clipboard" entry (file+headline ,(expand-file-name "cohere.org" org-directory) "UNFILED")
            "* %?\n\n%x")
-          ("i" "Idea" entry (file+headline ,(expand-file-name "main.org" org-directory) "Ideas")
-           "* %?\n%t")))
+          ("i" "Idea" entry (file+headline ,(expand-file-name "cohere.org" org-directory) "Ideas")
+           "* %?\n%t")
+          ("l" "Log" entry (file+datetree ,(expand-file-name "log.org" org-directory))
+           "* %^{Title}\n:PROPERTIES:\n:ID: %(org-id-new)\n:END:\n%?"
+           :clock-in t :clock-resume t))
+
+        org-roam-directory (expand-file-name "roam/" org-directory)
+        org-roam-completion-everywhere t
+        org-roam-db-gc-threshold most-positive-fixnum
+        org-roam-node-display-template (concat "${title:*} " (propertize "${tags:20}" 'face 'org-tag))
+        org-roam-capture-templates
+
+        '(
+          ("d" "Default" plain "%?"
+           :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n#+options: toc:nil num:nil")
+           :unnarrowed t)
+
+          ("p" "Person" plain
+           "%?\n* Experience\n\n* Education"
+           :target (file+head "people/${slug}.org"
+                              ":PROPERTIES:\n:company: %^{Company|Cohere}\n:role: %^{Role}\n:END:\n#+title: ${title}\n#+filetags: :person:\n")
+           :unnarrowed t)
+
+          ("m" "Meeting" plain
+           "* Meta\n%?\n* Attendees\n- [[roam:Aaron Cooley]]\n\n* Agenda\n\n\n* Notes\n\n* Action Items"
+           :target (file+head
+                    "meetings/%<%Y%m%d%H%M%S>-${slug}.org"
+                    "#+title: ${title} %u\n#+filetags: :meeting:\n#+date: %u\n#+options: toc:nil num:nil")
+           :clock-in t
+           :clock-resume t
+           :unnarrowed t)
+          )
+        )
 
   ;; org-reveal
   (require 'ox-reveal)
   (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
 
+  ;; Custom agenda views
   (add-to-list 'org-agenda-custom-commands
                '("g" "GTD View"
                  tags "+SCHEDULED<=\"<+0d>\""
@@ -305,6 +373,30 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
           (lambda ()
             (add-hook 'after-save-hook #'org-babel-tangle :append :local)))
 
+;; org-roam functions
+(org-roam-db-autosync-mode)
+(defun my/org-roam-agenda-files ()
+  (seq-uniq
+   (append
+    (mapcar #'car (org-roam-db-query
+                   [:select [nodes:file] :from tags
+                            :left-join nodes :on (= tags:node-id nodes:id)
+                            :where (= tags:tag "meeting")]))
+    (mapcar #'car (org-roam-db-query
+                   [:select [nodes:file] :from tags
+                            :left-join nodes :on (= tags:node-id nodes:id)
+                            :where (= tags:tag "project")])))))
+
+(defun my/org-agenda-files-refresh ()
+  (interactive)
+  (setq org-agenda-files
+        (append
+         (list (expand-file-name "tasks.org" org-directory))
+         (my/org-roam-agenda-files))))
+
+(my/org-agenda-files-refresh)
+(add-hook 'org-roam-find-file-hook #'my/org-agenda-files-refresh)
+
 (with-eval-after-load 'cider
   ;; Just the project name in REPL buffer like *clj:my-project*
   (setq cider-session-name-template "clj:%p"))
@@ -316,6 +408,11 @@ TUPLE is either (:font \"Name\") or (:family \"Family\")."
 (gptel-make-gemini "Gemini"
   :stream t
   :key (lambda () (getenv "GEMINI_API_KEY")))
+
+(use-package gptel-agent
+  :vc ( :url "https://github.com/karthink/gptel-agent"
+        :rev :newest)
+  :config (gptel-agent-update))
 
 (with-eval-after-load 'ob-python
   (setq org-babel-python-command "python3"))
