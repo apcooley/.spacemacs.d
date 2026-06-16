@@ -85,6 +85,9 @@ This function should only modify configuration layer settings."
      ;; spell-checking
      sql
      syntax-checking
+     (terraform :variables
+                terraform-auto-format-on-save t
+                terraform-backend 'lsp)
      (tree-sitter :variables
                   tree-sitter-syntax-highlight-enable t
                   tree-sitter-fold-enable t
@@ -105,7 +108,7 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '(emmet-mode ox-reveal vega-view org-superstar beancount pet)
+   dotspacemacs-additional-packages '(agent-shell emmet-mode ox-reveal vega-view org-superstar beancount pet org-ql)
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -500,7 +503,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; If non-nil, start an Emacs server if one is not already running.
    ;; (default nil)
-   dotspacemacs-enable-server nil
+   dotspacemacs-enable-server t
 
    ;; Set the emacs server socket location.
    ;; If nil, uses whatever the Emacs default is, otherwise a directory path
@@ -511,7 +514,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; If non-nil, advise quit functions to keep server open when quitting.
    ;; (default nil)
-   dotspacemacs-persistent-server nil
+   dotspacemacs-persistent-server t
 
    ;; List of search tool executable names. Spacemacs uses the first installed
    ;; tool of the list. Supported tools are `rg', `ag', `ack' and `grep'.
@@ -685,26 +688,26 @@ This function is called at the very end of Spacemacs initialization."
          jbeans-theme kaolin-themes ligature light-soap-theme link-hint
          live-py-mode lorem-ipsum lsp-mode lsp-origami lsp-pyright lsp-python-ms
          lsp-treemacs lsp-ui lua-mode lush-theme macrostep madhat2r-theme magit
-         magit-section markdown-mode markdown-toc material-theme minimal-theme
-         mmm-mode modus-themes moe-theme molokai-theme monochrome-theme
-         monokai-theme multi-line multi-term mustang-theme mwim nameless
-         naquadah-theme noctilux-theme nose nrepl-sync obsidian-theme
-         occidental-theme oldlace-theme omtose-phellack-themes open-junk-file
-         org-cliplink org-contrib org-download org-mime org-pomodoro org-present
-         org-projectile org-re-reveal org-rich-yank org-superstar
-         organic-green-theme orgit overseer ox-reveal paradox parseedn
-         password-generator pcache pcre2el phoenix-dark-mono-theme
-         phoenix-dark-pink-theme pip-requirements pipenv pippel planet-theme
-         poetry popwin powershell prettier-js professional-theme pug-mode
-         purple-haze-theme py-isort pydoc pyenv-mode pylookup pytest quickrun
-         railscasts-theme rainbow-delimiters rebecca-theme request restart-emacs
-         reverse-theme scss-mode sesman seti-theme shell-pop simple-httpd
-         slim-mode smartparens smeargle smyx-theme soft-charcoal-theme
-         soft-morning-theme soft-stone-theme solarized-theme soothe-theme
-         space-doc spacegray-theme spaceline spacemacs-purpose-popwin
-         spacemacs-whitespace-cleanup sphinx-doc string-edit-at-point
-         string-inflection subatomic-theme subatomic256-theme sublime-themes
-         sunny-day-theme symbol-overlay symon tagedit tango-2-theme
+         magit-section markdown-mode markdown-preview-mode markdown-toc
+         material-theme minimal-theme mmm-mode modus-themes moe-theme
+         molokai-theme monochrome-theme monokai-theme multi-line multi-term
+         mustang-theme mwim nameless naquadah-theme noctilux-theme nose nrepl-sync
+         obsidian-theme occidental-theme oldlace-theme omtose-phellack-themes
+         open-junk-file org-cliplink org-contrib org-download org-mime
+         org-pomodoro org-present org-preview-html org-projectile org-re-reveal
+         org-rich-yank org-superstar organic-green-theme orgit overseer ox-reveal
+         paradox parseedn password-generator pcache pcre2el
+         phoenix-dark-mono-theme phoenix-dark-pink-theme pip-requirements pipenv
+         pippel planet-theme poetry popwin powershell prettier-js
+         professional-theme pug-mode purple-haze-theme py-isort pydoc pyenv-mode
+         pylookup pytest quickrun railscasts-theme rainbow-delimiters
+         rebecca-theme request restart-emacs reverse-theme scss-mode sesman
+         seti-theme shell-pop simple-httpd slim-mode smartparens smeargle
+         smyx-theme soft-charcoal-theme soft-morning-theme soft-stone-theme
+         solarized-theme soothe-theme space-doc spacegray-theme spaceline
+         spacemacs-purpose-popwin spacemacs-whitespace-cleanup sphinx-doc
+         string-edit-at-point string-inflection subatomic-theme subatomic256-theme
+         sublime-themes sunny-day-theme symbol-overlay symon tagedit tango-2-theme
          tango-plus-theme tangotango-theme tao-theme term-cursor terminal-here
          toc-org toml-mode toxi-theme transient treemacs treemacs-evil
          treemacs-icons-dired treemacs-magit treemacs-persp treemacs-projectile
@@ -719,9 +722,9 @@ This function is called at the very end of Spacemacs initialization."
    ;; If you edit it by hand, you could mess it up, so be careful.
    ;; Your init file should contain only one such instance.
    ;; If there is more than one, they won't work right.
-   '(line-number ((t (:inherit fixed-pitch))))
-   '(line-number-current-line ((t (:inherit fixed-pitch))))
-   '(linum ((t (:inherit fixed-pitch))))
+   '(line-number ((t (:inherit fixed-pitch :height 1.0))))
+   '(line-number-current-line ((t (:inherit fixed-pitch :height 1.0))))
+   '(linum ((t (:inherit fixed-pitch :height 1.0))))
    '(org-block ((t (:inherit fixed-pitch))))
    '(org-block-begin-line ((t (:inherit fixed-pitch))))
    '(org-block-end-line ((t (:inherit fixed-pitch))))
