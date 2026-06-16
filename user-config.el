@@ -7,10 +7,26 @@
   :ensure t
   :config
   (ligature-set-ligatures
-   'prog-mode
-   '("->" "->>" "-<" "-<<" "--" "---" "-->" "<-" "<<"
-     ">>" "<=" ">=" "==" "===" "!=" "!==" "=>" "=>>" "<=>"))
-
+   't
+   ;; Trimmed to ligatures FiraCode-Regular.ttf actually ships.
+   ;; Confirmed via fontTools GSUB inspection (2026-06-16):
+   ;; "{-", "-}", "[]", "\\\\", "\\\\\\" are NOT present in stock
+   ;; Fira Code and have been removed.
+   ;; "/\\", "\\/", "{|", "[|", "|}", "|]" ARE present and added.
+   '("www" "**" "***" "**/" "*>" "*/"
+     "::" ":::" ":=" "!!" "!=" "!=="
+     "--" "---" "-->" "->" "->>" "-<" "-<<" "-~"
+     "#{" "#[" "##" "###" "####" "#(" "#?" "#_" "#_("
+     ".-" ".=" ".." "..<" "..." "?=" "??" ";;" "/*"
+     "/**" "/=" "/==" "/>" "//" "///" "/\\" "\\/"
+     "&&" "||" "||=" "|=" "|>" "|}" "|]"
+     "{|" "[|"
+     "^=" "$>" "++" "+++" "+>" "=:=" "=="
+     "===" "==>" "=>" "=>>" "<=" "=<<" "=/=" ">-" ">="
+     ">=>" ">>" ">>-" ">>=" ">>>" "<*" "<*>" "<|" "<|>"
+     "<$" "<$>" "<!--" "<-" "<--" "<->" "<+" "<+>" "<="
+     "<==" "<=>" "<=<" "<>" "<<" "<<-" "<<=" "<<<" "<~"
+     "<~~" "</" "</>" "~@" "~-" "~>" "~~" "~~>" "%%"))
   (global-ligature-mode t))
 
 (use-package pet
@@ -30,6 +46,9 @@
 (add-to-list 'load-path "~/.spacemacs.d/elisp/ob-duckdb/")
 (require 'ob-duckdb)
 
+(add-to-list 'load-path "~/.spacemacs.d/elisp/ob-bigquery/")
+(require 'ob-bigquery)
+
 ;; temporary file directory
 (setq temporary-file-directory "~/TEMP/")
 
@@ -44,6 +63,26 @@
 
 ;; Show .Rmd in markdown mode
 (add-to-list 'auto-mode-alist '("\\.Rmd\\'" . markdown-mode))
+
+(use-package markdown-preview-mode
+  :ensure t
+  :after markdown-mode
+  :commands (markdown-preview-mode markdown-preview-open-browser)
+  :config
+  ;; GitHub-flavored CSS for fidelity
+  (setq markdown-preview-stylesheets
+        (list "https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css"
+              "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/github.min.css"))
+  (setq markdown-preview-javascript
+        (list "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js"
+              "<script>document.addEventListener('DOMContentLoaded', () => { document.body.classList.add('markdown-body'); hljs.highlightAll(); });</script>")))
+
+;; Override the Spacemacs default (which calls broken vmd) with markdown-preview-mode
+(with-eval-after-load 'markdown-mode
+  (spacemacs/set-leader-keys-for-major-mode 'markdown-mode
+    "c P" #'markdown-preview-mode)
+  (spacemacs/set-leader-keys-for-major-mode 'gfm-mode
+    "c P" #'markdown-preview-mode))
 
 ;; For use with org-reveal
 (with-eval-after-load 'sgml-mode
@@ -276,66 +315,14 @@
                              (org-agenda-files :maxlevel . 9))
         org-startup-with-inline-images t
         org-agenda-custom-commands '()
-        org-capture-templates
-
-        ;; -- TODO | NEXT | WAIT --
-        ;; Places in tasks.org::Open
-        ;; Schedules for the current day
-        `(("t" "Todo" entry (file+olp ,(expand-file-name "tasks.org" org-directory) "Open")
-           "* TODO %?\nSCHEDULED: %t" :prepend t)
-          ("n" "Next action" entry (file+olp ,(expand-file-name "tasks.org" org-directory) "Open")
-           "* NEXT %?\nSCHEDULED: %t" :prepend t)
-          ("w" "Waiting" entry (file+headline ,(expand-file-name "tasks.org" org-directory) "Open")
-           "* WAIT %?\nSCHEDULED: %t" :prepend t)
-
-          ;; -- Meeting --
-          ;; m is for meeting to start immediately, M is for a meeting in the future
-          ("m" "Meeting" entry (file+olp ,(expand-file-name "meetings.org" org-directory) "UNFILED")
-           "* %? %u\n:PROPERTIES:\n:ID: %(org-id-new)\n:attendees+: [[file:people.org::*Aaron Cooley][Aaron Cooley]]\n\n:END:\n** Agenda\n\n** Notes\n\n** Action Items\n\n*** TODO Item\nSCHEDULED: %t"
-           :clock-in t :clock-resume t)
-          ("M" "Meeting (plan)" entry (file+olp ,(expand-file-name "meetings.org" org-directory) "UNFILED")
-           "* %?\nSCHEDULED: %^{Meeting date/time}T\n:PROPERTIES:\n:ID: %(org-id-new)\n:attendees+: [[file:people.org::*Aaron Cooley][Aaron Cooley]]\n\n:END:\n** Agenda\n\n** Notes\n\n** Action Items\n\n*** TODO Item\nSCHEDULED: %t")
-
-          ;; -- Other randoms --
-          ("e" "Email or message" entry (file+headline ,(expand-file-name "cohere.org" org-directory) "Messages")
-           "* %?\nSCHEDULED: %t\n[[file:%(expand-file-name (format \"messages/%s.msg\" (format-time-string \"%Y%m%d-%H%M%S\")) org-directory)]]"
-           :prepend t)
-          ("p" "Paste clipboard" entry (file+headline ,(expand-file-name "cohere.org" org-directory) "UNFILED")
-           "* %?\n\n%x")
-          ("i" "Idea" entry (file+headline ,(expand-file-name "cohere.org" org-directory) "Ideas")
-           "* %?\n%t")
-          ("l" "Log" entry (file+datetree ,(expand-file-name "log.org" org-directory))
-           "* %^{Title}\n:PROPERTIES:\n:ID: %(org-id-new)\n:END:\n%?"
-           :clock-in t :clock-resume t))
 
         org-roam-directory (expand-file-name "roam/" org-directory)
         org-roam-completion-everywhere t
         org-roam-db-gc-threshold most-positive-fixnum
-        org-roam-node-display-template (concat "${title:*} " (propertize "${tags:20}" 'face 'org-tag))
-        org-roam-capture-templates
+        org-roam-node-display-template (concat "${title:*} " (propertize "${tags:20}" 'face 'org-tag)))
 
-        '(
-          ("d" "Default" plain "%?"
-           :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                              "#+title: ${title}\n#+options: toc:nil num:nil")
-           :unnarrowed t)
-
-          ("p" "Person" plain
-           "%?\n* Experience\n\n* Education"
-           :target (file+head "people/${slug}.org"
-                              ":PROPERTIES:\n:company: %^{Company|Cohere}\n:role: %^{Role}\n:END:\n#+title: ${title}\n#+filetags: :person:\n")
-           :unnarrowed t)
-
-          ("m" "Meeting" plain
-           "* Meta\n%?\n* Attendees\n- [[roam:Aaron Cooley]]\n\n* Agenda\n\n\n* Notes\n\n* Action Items"
-           :target (file+head
-                    "meetings/%<%Y%m%d%H%M%S>-${slug}.org"
-                    "#+title: ${title} %u\n#+filetags: :meeting:\n#+date: %u\n#+options: toc:nil num:nil")
-           :clock-in t
-           :clock-resume t
-           :unnarrowed t)
-          )
-        )
+  ;; Load capture templates from dedicated file (org-directory is set above)
+  (load-file (expand-file-name "~/.spacemacs.d/capture-templates.el"))
 
   ;; org-reveal
   (require 'ox-reveal)
@@ -366,7 +353,12 @@
   ;; duckdb org-babel
   (add-to-list 'org-babel-load-languages '(duckdb . t))
   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
-  (add-to-list 'org-src-lang-modes '("duckdb" . sql)))
+  (add-to-list 'org-src-lang-modes '("duckdb" . sql))
+
+  ;; bigquery org-babel
+  (add-to-list 'org-babel-load-languages '(bigquery . t))
+  (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+  (add-to-list 'org-src-lang-modes '("bigquery" . sql)))
 
 ;; tangle-on-save (local to org buffers)
 (add-hook 'org-mode-hook
@@ -396,6 +388,59 @@
 
 (my/org-agenda-files-refresh)
 (add-hook 'org-roam-find-file-hook #'my/org-agenda-files-refresh)
+
+(use-package org-live
+  :load-path "~/source/org-live"
+  :commands (org-live-preview-mode
+             org-live-keystroke-preview
+             org-live-cycle-theme))
+
+(use-package cohere-css
+  :load-path "~/source/cohere-css"
+  :after org-live)
+
+(with-eval-after-load 'org
+  (spacemacs/declare-prefix-for-mode 'org-mode "mP" "preview-html")
+  (spacemacs/set-leader-keys-for-major-mode 'org-mode
+    "P p" #'org-live-preview-mode
+    "P l" #'org-live-keystroke-preview
+    "P t" #'org-live-cycle-theme))
+
+(add-to-list 'load-path (expand-file-name "~/org/my-org/cos"))
+(require 'aaron-cos-commands)
+
+(use-package agent-shell
+  :ensure t
+  :config
+  (setq agent-shell-preferred-agent-config
+        (agent-shell-opencode-make-agent-config)))
+
+;; SPC $ a — agent-shell submenu
+(spacemacs/declare-prefix "$ a" "agent-shell")
+(spacemacs/set-leader-keys
+  "$ a n" #'agent-shell-new-shell        ; new session
+  "$ a a" #'agent-shell                  ; open/resume current
+  "$ a o" #'agent-shell-other-buffer     ; switch to other agent buffer
+  "$ a r" #'agent-shell-resume-session   ; resume a past session
+  "$ a s" #'agent-shell-search-history   ; search session history
+  "$ a f" #'agent-shell-fork             ; fork current session
+  "$ a i" #'agent-shell-interrupt        ; interrupt running agent
+  "$ a t" #'agent-shell-toggle           ; toggle visibility
+  "$ a l" #'agent-shell-view-acp-logs    ; view ACP logs
+  "$ a R" #'agent-shell-restart)         ; restart agent
+
+(which-key-add-key-based-replacements
+  "SPC $ a"   "agent-shell"
+  "SPC $ a n" "new-shell"
+  "SPC $ a a" "open/resume"
+  "SPC $ a o" "other-buffer"
+  "SPC $ a r" "resume-session"
+  "SPC $ a s" "search-history"
+  "SPC $ a f" "fork"
+  "SPC $ a i" "interrupt"
+  "SPC $ a t" "toggle"
+  "SPC $ a l" "view-logs"
+  "SPC $ a R" "restart")
 
 (with-eval-after-load 'cider
   ;; Just the project name in REPL buffer like *clj:my-project*
