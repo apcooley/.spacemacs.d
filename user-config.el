@@ -167,6 +167,11 @@
   (setq org-clock-persist 'history)
   (org-clock-persistence-insinuate)
 
+  ;; Don't abort export (and therefore org-live-preview) on broken/fuzzy
+  ;; links. 'mark renders [BROKEN LINK: ...] in the output so they stay
+  ;; visible and fixable, but the preview pipeline keeps flowing.
+  (setq org-export-with-broken-links 'mark)
+
   (add-hook 'org-mode-hook #'visual-line-mode)
   (add-hook 'org-mode-hook #'variable-pitch-mode)
 
@@ -360,6 +365,13 @@
   (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
   (add-to-list 'org-src-lang-modes '("bigquery" . sql)))
 
+;; mermaid org-babel (ob-mermaid → mmdc CLI; renders #+begin_src mermaid
+;; blocks to .svg/.png on export, embedded as <img> in HTML).
+(with-eval-after-load 'org
+  (add-to-list 'org-babel-load-languages '(mermaid . t))
+  (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+  (setq ob-mermaid-cli-path (executable-find "mmdc")))
+
 ;; tangle-on-save (local to org buffers)
 (add-hook 'org-mode-hook
           (lambda ()
@@ -397,7 +409,10 @@
 
 (use-package cohere-css
   :load-path "~/source/cohere-css"
-  :after org-live)
+  :after org-live
+  :config
+  (setq org-live-default-theme 'cohere-dark)
+  (org-live-set-cycle-order '(cohere-dark cohere-light)))
 
 (with-eval-after-load 'org
   (spacemacs/declare-prefix-for-mode 'org-mode "mP" "preview-html")

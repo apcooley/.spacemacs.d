@@ -289,6 +289,11 @@ overridden =SPC m c P= keybinding below.
     (setq org-clock-persist 'history)
     (org-clock-persistence-insinuate)
 
+    ;; Don't abort export (and therefore org-live-preview) on broken/fuzzy
+    ;; links. 'mark renders [BROKEN LINK: ...] in the output so they stay
+    ;; visible and fixable, but the preview pipeline keeps flowing.
+    (setq org-export-with-broken-links 'mark)
+
     (add-hook 'org-mode-hook #'visual-line-mode)
     (add-hook 'org-mode-hook #'variable-pitch-mode)
 
@@ -482,6 +487,13 @@ overridden =SPC m c P= keybinding below.
     (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
     (add-to-list 'org-src-lang-modes '("bigquery" . sql)))
 
+  ;; mermaid org-babel (ob-mermaid → mmdc CLI; renders #+begin_src mermaid
+  ;; blocks to .svg/.png on export, embedded as <img> in HTML).
+  (with-eval-after-load 'org
+    (add-to-list 'org-babel-load-languages '(mermaid . t))
+    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+    (setq ob-mermaid-cli-path (executable-find "mmdc")))
+
   ;; tangle-on-save (local to org buffers)
   (add-hook 'org-mode-hook
             (lambda ()
@@ -530,8 +542,9 @@ test suites and lint clean.
    http://localhost:8080/imp/live/<buffer-name>/.
 
 3. =org-live-cycle-theme= (=SPC m P t=) — cycles the current buffer through
-   the registered themes (readtheorg → bigblow → plain → bare → cohere-light
-   → cohere-dark → wrap) and re-renders any active preview.
+   the registered themes (cohere-dark → cohere-light → readtheorg → bigblow
+   → plain → bare → wrap) and re-renders any active preview. =cohere-dark=
+   is the default theme for new buffers.
 
 #+begin_src emacs-lisp :tangle yes
   (use-package org-live
@@ -542,7 +555,10 @@ test suites and lint clean.
 
   (use-package cohere-css
     :load-path "~/source/cohere-css"
-    :after org-live)
+    :after org-live
+    :config
+    (setq org-live-default-theme 'cohere-dark)
+    (org-live-set-cycle-order '(cohere-dark cohere-light)))
 
   (with-eval-after-load 'org
     (spacemacs/declare-prefix-for-mode 'org-mode "mP" "preview-html")
@@ -671,12 +687,14 @@ Saving this file (or ~user-config.org~) tangles both ~capture-templates.el~ and
           ("d" "Default" plain "%?"
            :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                               "#+title: ${title}\n#+options: toc:nil num:nil")
+           :immediate-finish t
            :unnarrowed t)
 
           ("p" "Person" plain
            "* Notes\n%?\n* Experience\n\n* Education"
            :target (file+head "people/${slug}.org"
                               ":PROPERTIES:\n:company: %^{Company|Cohere}\n:role: %^{Role}\n:location: %^{Location}\n:timezone: %^{Timezone|America/Toronto|America/New_York|America/Los_Angeles|Europe/London|UTC}\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :person:\n#+options: toc:nil num:nil\n\n")
+           :immediate-finish t
            :unnarrowed t)
 
           ("m" "Meeting" plain
@@ -686,20 +704,38 @@ Saving this file (or ~user-config.org~) tangles both ~capture-templates.el~ and
                     ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title} [%<%Y-%m-%d %a>]\n#+filetags: :meeting:\n#+date: %U\n#+options: toc:nil num:nil\n\n")
            :clock-in t
            :clock-resume t
+           :immediate-finish t
            :unnarrowed t)
 
           ("i" "Initiative" plain
            "* Objective\n%?\n\n* Key Results\n- [ ] \n\n* Notes\n\n* Log"
            :target (file+head "initiatives/${slug}.org"
                               ":PROPERTIES:\n:ID:       %(org-id-new)\n:PILLAR: %^{Pillar|NI|DF|BI}\n:STATUS: %^{Status|active|planned|paused}\n:OWNER:    [[id:B3A450BA-7416-49E6-BD2C-E803F31787BE][Aaron Cooley]]\n:START: %U\n:TARGET: \n:END:\n#+title: ${title}\n#+filetags: :initiative:%\\1:\n#+options: toc:nil num:nil\n\n")
+           :immediate-finish t
            :unnarrowed t)
 
           ("s" "Message" plain
            "* Meta :message:\n:PROPERTIES:\n:PLATFORM: %^{Platform|Slack|Email|Google Chat|Teams}\n:CHANNEL: %^{Channel/From}\n:DATE: %^{Date}u\n:URL: %^{URL}\n:END:\n\n* Participants\n- [[id:B3A450BA-7416-49E6-BD2C-E803F31787BE][Aaron Cooley]]\n\n* Content\n%?\n\n* Key Points\n\n* Action Items"
            :target (file+head "messages/%<%Y%m%d%H%M%S>-${slug}.org"
                               ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :message:\n#+date: %U\n#+options: toc:nil num:nil\n\n")
+           :immediate-finish t
            :unnarrowed t)
           ))
+
+  ;; org-roam DAILIES capture templates.
+  ;; Single template keyed "d" so org-roam-dailies-goto-today / -capture-today
+  ;; never prompts for a selection. Lays down the full /plan-day skeleton on a
+  ;; new daily; jumps straight to the file if it already exists. :immediate-finish
+  ;; saves+closes without an interactive capture buffer; :unnarrowed lands you in
+  ;; the whole file.
+  (setq org-roam-dailies-capture-templates
+
+        '(("d" "Daily" plain ""
+           :target (file+head
+                    "%<%Y-%m-%d>.org"
+                    ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: %<%Y-%m-%d>\n#+filetags: :daily:\n#+OPTIONS: num:nil\n\n* Log\n|  Time | Task | Type |\n|-------+------+------|\n|       |      |      |\nKey:\n- =A= Administrative\n- =B= Break/personal\n- =D= Deep work\n- =I= Initiative work\n- =M= Meeting\n\n* Schedule\n\n* High Priority Tasks\n\n* Blockers & Urgent\n\n* Initiative Status\n\n* Decision Points\n\n* Yesterday Carry-Over\n\n* Tomorrow Preview\n\n* Captures\n")
+           :immediate-finish t
+           :unnarrowed t)))
 #+end_src
 
 * Beancount mode for finance
