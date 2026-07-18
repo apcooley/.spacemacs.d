@@ -412,6 +412,8 @@
   :after org-live
   :config
   (setq org-live-default-theme 'cohere-dark)
+  (org-live-unregister-theme 'plain)
+  (org-live-unregister-theme 'bare)
   (org-live-set-cycle-order '(cohere-dark cohere-light)))
 
 (with-eval-after-load 'org

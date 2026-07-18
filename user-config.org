@@ -530,7 +530,9 @@ registry. Implementation lives in two real packages at =~/source/org-live/=
 (generic preview + 4 built-in themes: readtheorg, bigblow, plain, bare) and
 =~/source/cohere-css/= (Cohere brand themes: =cohere-light= and =cohere-dark=
 on top of org-live's structure). Both are MELPA-grade packages with full
-test suites and lint clean.
+test suites and lint clean. The =plain= and =bare= built-in themes are
+unregistered at config time (never used); the cycle is =cohere-dark= →
+=cohere-light= → =readtheorg= → =bigblow= → wrap.
 
 1. =org-live-preview-mode= — buffer-local minor mode. On every save, exports
    the buffer to a sibling =.html= file with meta-refresh tag, opens in the
@@ -543,8 +545,8 @@ test suites and lint clean.
 
 3. =org-live-cycle-theme= (=SPC m P t=) — cycles the current buffer through
    the registered themes (cohere-dark → cohere-light → readtheorg → bigblow
-   → plain → bare → wrap) and re-renders any active preview. =cohere-dark=
-   is the default theme for new buffers.
+   → wrap) and re-renders any active preview. =cohere-dark= is the default
+   theme for new buffers.
 
 #+begin_src emacs-lisp :tangle yes
   (use-package org-live
@@ -558,6 +560,8 @@ test suites and lint clean.
     :after org-live
     :config
     (setq org-live-default-theme 'cohere-dark)
+    (org-live-unregister-theme 'plain)
+    (org-live-unregister-theme 'bare)
     (org-live-set-cycle-order '(cohere-dark cohere-light)))
 
   (with-eval-after-load 'org
