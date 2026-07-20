@@ -194,11 +194,13 @@
 
   (defun my/font-tuple (font-candidates family-fallback warn-msg)
     "Return plist like (:font \"Name\") or (:family \"Family\"), or nil."
-    (or (seq-some (lambda (f) (when (x-list-fonts f) (list :font f)))
-                  font-candidates)
-        (when (x-family-fonts family-fallback)
-          (list :family family-fallback))
-        (progn (warn "%s" warn-msg) nil)))
+    (if (display-graphic-p)
+        (or (seq-some (lambda (f) (when (x-list-fonts f) (list :font f)))
+                      font-candidates)
+            (when (x-family-fonts family-fallback)
+              (list :family family-fallback))
+            (progn (warn "%s" warn-msg) nil))
+      nil))
 
   (defun my/org-font-tuples ()
     (let ((body
@@ -426,39 +428,6 @@
 (add-to-list 'load-path (expand-file-name "~/org/my-org/cos"))
 (require 'aaron-cos-commands)
 
-(use-package agent-shell
-  :ensure t
-  :config
-  (setq agent-shell-preferred-agent-config
-        (agent-shell-opencode-make-agent-config)))
-
-;; SPC $ a — agent-shell submenu
-(spacemacs/declare-prefix "$ a" "agent-shell")
-(spacemacs/set-leader-keys
-  "$ a n" #'agent-shell-new-shell        ; new session
-  "$ a a" #'agent-shell                  ; open/resume current
-  "$ a o" #'agent-shell-other-buffer     ; switch to other agent buffer
-  "$ a r" #'agent-shell-resume-session   ; resume a past session
-  "$ a s" #'agent-shell-search-history   ; search session history
-  "$ a f" #'agent-shell-fork             ; fork current session
-  "$ a i" #'agent-shell-interrupt        ; interrupt running agent
-  "$ a t" #'agent-shell-toggle           ; toggle visibility
-  "$ a l" #'agent-shell-view-acp-logs    ; view ACP logs
-  "$ a R" #'agent-shell-restart)         ; restart agent
-
-(which-key-add-key-based-replacements
-  "SPC $ a"   "agent-shell"
-  "SPC $ a n" "new-shell"
-  "SPC $ a a" "open/resume"
-  "SPC $ a o" "other-buffer"
-  "SPC $ a r" "resume-session"
-  "SPC $ a s" "search-history"
-  "SPC $ a f" "fork"
-  "SPC $ a i" "interrupt"
-  "SPC $ a t" "toggle"
-  "SPC $ a l" "view-logs"
-  "SPC $ a R" "restart")
-
 (with-eval-after-load 'cider
   ;; Just the project name in REPL buffer like *clj:my-project*
   (setq cider-session-name-template "clj:%p"))
@@ -478,6 +447,8 @@
 
 (with-eval-after-load 'ob-python
   (setq org-babel-python-command "python3"))
+
+(setq auto-save-query nil)
 
 (add-to-list 'load-path "~/.emacs.d/private/beancount-mode")
 (require 'beancount)

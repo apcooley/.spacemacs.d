@@ -62,7 +62,13 @@
         ("s" "Message" plain
          "* Meta :message:\n:PROPERTIES:\n:PLATFORM: %^{Platform|Slack|Email|Google Chat|Teams}\n:CHANNEL: %^{Channel/From}\n:DATE: %^{Date}u\n:URL: %^{URL}\n:END:\n\n* Participants\n- [[id:B3A450BA-7416-49E6-BD2C-E803F31787BE][Aaron Cooley]]\n\n* Content\n%?\n\n* Key Points\n\n* Action Items"
          :target (file+head "messages/%<%Y%m%d%H%M%S>-${slug}.org"
-                            ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :message:\n#+date: %U\n#+options: toc:nil num:nil\n\n")
+                             ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :message:\n#+date: %U\n#+options: toc:nil num:nil\n\n")
+         :immediate-finish t
+         :unnarrowed t)
+
+        ("W" "Weekly" plain ""
+         :target (file+head "weekly/${date}.org"
+                            ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :weekly:\n\n")
          :immediate-finish t
          :unnarrowed t)
         ))

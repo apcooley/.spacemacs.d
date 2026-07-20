@@ -316,11 +316,13 @@ overridden =SPC m c P= keybinding below.
 
     (defun my/font-tuple (font-candidates family-fallback warn-msg)
       "Return plist like (:font \"Name\") or (:family \"Family\"), or nil."
-      (or (seq-some (lambda (f) (when (x-list-fonts f) (list :font f)))
-                    font-candidates)
-          (when (x-family-fonts family-fallback)
-            (list :family family-fallback))
-          (progn (warn "%s" warn-msg) nil)))
+      (if (display-graphic-p)
+          (or (seq-some (lambda (f) (when (x-list-fonts f) (list :font f)))
+                        font-candidates)
+              (when (x-family-fonts family-fallback)
+                (list :family family-fallback))
+              (progn (warn "%s" warn-msg) nil))
+        nil))
 
     (defun my/org-font-tuples ()
       (let ((body
@@ -645,6 +647,14 @@ GPTEL agent support
 #+begin_src emacs-lisp :tangle yes
     (with-eval-after-load 'ob-python
       (setq org-babel-python-command "python3"))
+#+end_src
+
+** Silence per-file auto-save recovery prompts
+Emacs walks every stale ~#...#~ file on startup and prompts per-file in the
+minibuffer, blocking startup for ~30s. We want the files left in place (crash
+recovery via =M-x recover-this-file= on demand) but no per-file prompt.
+#+begin_src emacs-lisp :tangle yes
+  (setq auto-save-query nil)
 #+end_src
 
 * Capture templates

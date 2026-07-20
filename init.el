@@ -97,6 +97,7 @@ This function should only modify configuration layer settings."
      treemacs
      windows-scripts
      (xclipboard :variables xclipboard-enable-cliphist t)
+     agent-shell
      )
 
 
@@ -108,7 +109,7 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '(agent-shell emmet-mode ox-reveal vega-view org-superstar beancount pet org-ql ob-mermaid)
+   dotspacemacs-additional-packages '(emmet-mode ox-reveal vega-view org-superstar beancount pet org-ql ob-mermaid)
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -224,7 +225,7 @@ It should only modify the values of Spacemacs settings."
    ;; Show numbers before the startup list lines. (default t)
    dotspacemacs-show-startup-list-numbers t
 
-   ;; The minimum delay in seconds between number key presses. (default 0.4)
+   ;; The maximum delay in seconds between number key presses. (default 0.4)
    dotspacemacs-startup-buffer-multi-digit-delay 0.4
 
    ;; If non-nil, show file icons for entries and headings on Spacemacs home buffer.
@@ -277,8 +278,8 @@ It should only modify the values of Spacemacs settings."
    dotspacemacs-colorize-cursor-according-to-state t
 
    ;; Default font or prioritized list of fonts. This setting has no effect when
-   ;; running Emacs in terminal. The font set here will be used for default and
-   ;; fixed-pitch faces. The `:size' can be specified as
+   ;; running Emacs in terminal. The font set here will be used for `default' and
+   ;; `fixed-pitch' faces. The `:size' can be specified as
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
    dotspacemacs-default-font '("Fira Code"
@@ -330,7 +331,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; If non-nil then the last auto saved layouts are resumed automatically upon
    ;; start. (default nil)
-   dotspacemacs-auto-resume-layouts nil
+   dotspacemacs-auto-resume-layouts t
 
    ;; If non-nil, auto-generate layout name when creating new layouts. Only has
    ;; effect when using the "jump to layout by number" commands. (default nil)
@@ -395,9 +396,12 @@ It should only modify the values of Spacemacs settings."
    ;; Spacemacs on Windows. Refer the FAQ.org "load-hints" session for details.
    dotspacemacs-enable-load-hints nil
 
-   ;; If t, enable the `package-quickstart' feature to avoid full package
-   ;; loading, otherwise no `package-quickstart' attemption (default nil).
-   ;; Refer the FAQ.org "package-quickstart" section for details.
+   ;; If non-nil, enable the `package-quickstart' feature to avoid activating
+   ;; all package autoloads one by one.
+   ;; Requires building and maintaining a quickstart autoload file for all
+   ;; installed packages.
+   ;; Refer to the FAQ.org "package-quickstart" section for details.
+   ;; (default nil)
    dotspacemacs-enable-package-quickstart nil
 
    ;; If non-nil a progress bar is displayed when spacemacs is loading. This
@@ -493,7 +497,9 @@ It should only modify the values of Spacemacs settings."
 
    ;; If non-nil pressing the closing parenthesis `)' key in insert mode passes
    ;; over any automatically added closing parenthesis, bracket, quote, etc...
-   ;; This can be temporary disabled by pressing `C-q' before `)'. (default nil)
+   ;; This can be temporary disabled by pressing `C-q' before `)'.
+   ;; Only effective when `dotspacemacs-activate-smartparens-mode' is non-nil.
+   ;; Redundant when `smartparens-strict-mode' is enabled. (default nil)
    dotspacemacs-smart-closing-parenthesis nil
 
    ;; Select a scope to highlight delimiters. Possible values are `any',
@@ -618,6 +624,11 @@ It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
   ;; find-file in home directory
   (setq default-directory (expand-file-name "~/"))
+  (let ((gls (or (executable-find "gls")
+                 "/opt/homebrew/opt/coreutils/bin/gls")))
+    (when (file-executable-p gls)
+      (setq insert-directory-program gls
+            dired-use-ls-dired t)))
   )
 
 (defun dotspacemacs/user-config ()
@@ -650,7 +661,7 @@ This function is called at the very end of Spacemacs initialization."
      '((agenda . " %i %-12:c%?-12t%-6e %s ") (todo . " %i %-12:c")
        (tags . " %i %-12:c") (search . " %i %-12:c")))
    '(package-selected-packages
-     '(a ac-ispell ace-jump-helm-line ace-link ace-window afternoon-theme
+     '(a ac-ispell ace-jump-helm-line ace-link ace-window acp afternoon-theme
          aggressive-indent alect-themes all-the-icons ample-theme ample-zen-theme
          anti-zenburn-theme apropospriate-theme auto-compile auto-complete
          auto-highlight-symbol auto-yasnippet autothemer badwolf-theme
@@ -702,18 +713,19 @@ This function is called at the very end of Spacemacs initialization."
          professional-theme pug-mode purple-haze-theme py-isort pydoc pyenv-mode
          pylookup pytest quickrun railscasts-theme rainbow-delimiters
          rebecca-theme request restart-emacs reverse-theme scss-mode sesman
-         seti-theme shell-pop simple-httpd slim-mode smartparens smeargle
-         smyx-theme soft-charcoal-theme soft-morning-theme soft-stone-theme
-         solarized-theme soothe-theme space-doc spacegray-theme spaceline
-         spacemacs-purpose-popwin spacemacs-whitespace-cleanup sphinx-doc
-         string-edit-at-point string-inflection subatomic-theme subatomic256-theme
-         sublime-themes sunny-day-theme symbol-overlay symon tagedit tango-2-theme
-         tango-plus-theme tangotango-theme tao-theme term-cursor terminal-here
-         toc-org toml-mode toxi-theme transient treemacs treemacs-evil
-         treemacs-icons-dired treemacs-magit treemacs-persp treemacs-projectile
-         treepy twilight-anti-bright-theme twilight-bright-theme twilight-theme
-         ujelly-theme underwater-theme undo-tree unfill uuidgen vi-tilde-fringe
-         vim-powerline volatile-highlights web-beautify web-mode wfnames which-key
+         seti-theme shell-maker shell-pop simple-httpd slim-mode smartparens
+         smeargle smyx-theme soft-charcoal-theme soft-morning-theme
+         soft-stone-theme solarized-theme soothe-theme space-doc spacegray-theme
+         spaceline spacemacs-purpose-popwin spacemacs-whitespace-cleanup
+         sphinx-doc string-edit-at-point string-inflection subatomic-theme
+         subatomic256-theme sublime-themes sunny-day-theme symbol-overlay symon
+         tagedit tango-2-theme tango-plus-theme tangotango-theme tao-theme
+         term-cursor terminal-here toc-org toml-mode toxi-theme transient treemacs
+         treemacs-evil treemacs-icons-dired treemacs-magit treemacs-persp
+         treemacs-projectile treepy twilight-anti-bright-theme
+         twilight-bright-theme twilight-theme ujelly-theme underwater-theme
+         undo-tree unfill uuidgen vi-tilde-fringe vim-powerline
+         volatile-highlights web-beautify web-mode wfnames which-key
          white-sand-theme winum with-editor writeroom-mode ws-butler xterm-color
          yaml yaml-mode yapfify yasnippet yasnippet-snippets zen-and-art-theme
          zenburn-theme zonokai-emacs)))
@@ -722,6 +734,7 @@ This function is called at the very end of Spacemacs initialization."
    ;; If you edit it by hand, you could mess it up, so be careful.
    ;; Your init file should contain only one such instance.
    ;; If there is more than one, they won't work right.
+   '(default ((t (:background nil))))
    '(line-number ((t (:inherit fixed-pitch :height 1.0))))
    '(line-number-current-line ((t (:inherit fixed-pitch :height 1.0))))
    '(linum ((t (:inherit fixed-pitch :height 1.0))))
